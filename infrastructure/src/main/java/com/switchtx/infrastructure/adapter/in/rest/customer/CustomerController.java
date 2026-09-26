@@ -8,6 +8,7 @@ import com.switchtx.application.port.in.customer.UpdateCustomerCommand;
 import com.switchtx.domain.model.customer.Customer;
 import com.switchtx.domain.model.customer.CustomerStatus;
 import com.switchtx.infrastructure.adapter.in.rest.common.PageResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -16,15 +17,11 @@ import java.net.URI;
 import java.util.UUID;
 
 @RestController
+@RequiredArgsConstructor
 public class CustomerController implements CustomerApi {
 
     private final CustomerCommandUseCase commands;
     private final CustomerQueryUseCase queries;
-
-    public CustomerController(CustomerCommandUseCase commands, CustomerQueryUseCase queries) {
-        this.commands = commands;
-        this.queries = queries;
-    }
 
     @Override
     @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('CUSTOMER_CREATE')")

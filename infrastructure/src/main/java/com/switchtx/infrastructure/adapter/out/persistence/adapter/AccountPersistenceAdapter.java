@@ -9,6 +9,7 @@ import com.switchtx.domain.model.account.AccountStatus;
 import com.switchtx.infrastructure.adapter.out.persistence.mapper.PersistenceMapper;
 import com.switchtx.infrastructure.adapter.out.persistence.repository.AccountJpaRepository;
 import com.switchtx.infrastructure.adapter.out.persistence.repository.Specifications;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -17,13 +18,10 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Component
+@RequiredArgsConstructor
 public class AccountPersistenceAdapter implements AccountRepositoryPort {
 
     private final AccountJpaRepository repository;
-
-    public AccountPersistenceAdapter(AccountJpaRepository repository) {
-        this.repository = repository;
-    }
 
     @Override
     public Account save(Account account) {

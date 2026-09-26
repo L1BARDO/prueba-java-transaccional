@@ -19,23 +19,17 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(proxyTargetClass = true)
+@RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtTokenProvider tokenProvider;
     private final JwtAuthenticationEntryPoint entryPoint;
     private final JwtAccessDeniedHandler accessDeniedHandler;
-
-    public SecurityConfig(JwtTokenProvider tokenProvider,
-                          JwtAuthenticationEntryPoint entryPoint,
-                          JwtAccessDeniedHandler accessDeniedHandler) {
-        this.tokenProvider = tokenProvider;
-        this.entryPoint = entryPoint;
-        this.accessDeniedHandler = accessDeniedHandler;
-    }
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {

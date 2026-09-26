@@ -12,6 +12,7 @@ import com.switchtx.infrastructure.adapter.out.persistence.mapper.ConstraintViol
 import com.switchtx.infrastructure.adapter.out.persistence.mapper.PersistenceMapper;
 import com.switchtx.infrastructure.adapter.out.persistence.repository.Specifications;
 import com.switchtx.infrastructure.adapter.out.persistence.repository.TransactionJpaRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
@@ -19,13 +20,10 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Component
+@RequiredArgsConstructor
 public class TransactionPersistenceAdapter implements TransactionRepositoryPort {
 
     private final TransactionJpaRepository repository;
-
-    public TransactionPersistenceAdapter(TransactionJpaRepository repository) {
-        this.repository = repository;
-    }
 
     @Override
     public Transaction save(Transaction transaction) {

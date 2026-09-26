@@ -6,19 +6,17 @@ import com.switchtx.application.port.out.MovementRepositoryPort;
 import com.switchtx.domain.model.transaction.Movement;
 import com.switchtx.infrastructure.adapter.out.persistence.mapper.PersistenceMapper;
 import com.switchtx.infrastructure.adapter.out.persistence.repository.MovementJpaRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.UUID;
 
 @Component
+@RequiredArgsConstructor
 public class MovementPersistenceAdapter implements MovementRepositoryPort {
 
     private final MovementJpaRepository repository;
-
-    public MovementPersistenceAdapter(MovementJpaRepository repository) {
-        this.repository = repository;
-    }
 
     @Override
     public void saveAll(List<Movement> movements) {

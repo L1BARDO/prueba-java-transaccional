@@ -22,11 +22,13 @@ import com.switchtx.domain.model.transaction.Movement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import lombok.RequiredArgsConstructor;
+
 import java.time.Clock;
 import java.util.Currency;
-import java.util.Objects;
 import java.util.UUID;
 
+@RequiredArgsConstructor
 public class AccountService implements AccountCommandUseCase, AccountQueryUseCase {
 
     private static final Logger log = LogManager.getLogger(AccountService.class);
@@ -36,15 +38,6 @@ public class AccountService implements AccountCommandUseCase, AccountQueryUseCas
     private final MovementRepositoryPort movements;
     private final UnitOfWork unitOfWork;
     private final Clock clock;
-
-    public AccountService(AccountRepositoryPort accounts, CustomerRepositoryPort customers,
-                          MovementRepositoryPort movements, UnitOfWork unitOfWork, Clock clock) {
-        this.accounts = Objects.requireNonNull(accounts);
-        this.customers = Objects.requireNonNull(customers);
-        this.movements = Objects.requireNonNull(movements);
-        this.unitOfWork = Objects.requireNonNull(unitOfWork);
-        this.clock = Objects.requireNonNull(clock);
-    }
 
     @Override
     public Account open(OpenAccountCommand command) {

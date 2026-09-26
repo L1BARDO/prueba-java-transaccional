@@ -4,6 +4,8 @@ import com.switchtx.domain.exception.BusinessRuleViolationException;
 import com.switchtx.domain.exception.ErrorCode;
 import com.switchtx.domain.model.shared.Guard;
 
+import lombok.Getter;
+
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Set;
@@ -13,6 +15,7 @@ import java.util.stream.Collectors;
 /**
  * Usuario del sistema con autenticación por contraseña cifrada y roles RBAC.
  */
+@Getter
 public final class User {
 
     private final UUID id;
@@ -75,19 +78,4 @@ public final class User {
                 .map(Permission::code)
                 .collect(Collectors.toUnmodifiableSet());
     }
-
-    public UUID getId() { return id; }
-    public String getUsername() { return username; }
-    public String getEmail() { return email; }
-    public String getPasswordHash() { return passwordHash; }
-    public String getFullName() { return fullName; }
-    public UUID getCustomerId() { return customerId; }
-    public UserStatus getStatus() { return status; }
-    public int getFailedLoginAttempts() { return failedLoginAttempts; }
-    public Instant getLastLoginAt() { return lastLoginAt; }
-    public Instant getPasswordChangedAt() { return passwordChangedAt; }
-    public Instant getCreatedAt() { return createdAt; }
-    public Instant getUpdatedAt() { return updatedAt; }
-    public Long getVersion() { return version; }
-    public Set<Role> getRoles() { return roles; }
 }

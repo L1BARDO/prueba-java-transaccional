@@ -10,11 +10,21 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
 @Table(name = "customers")
+@Getter
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class CustomerEntity {
 
     @Id
@@ -48,33 +58,4 @@ public class CustomerEntity {
 
     @Version
     private Long version;
-
-    protected CustomerEntity() {
-        // requerido por JPA
-    }
-
-    public CustomerEntity(UUID id, DocumentType documentType, String documentNumber, String fullName, String email,
-                          String phone, CustomerStatus status, Instant createdAt, Instant updatedAt, Long version) {
-        this.id = id;
-        this.documentType = documentType;
-        this.documentNumber = documentNumber;
-        this.fullName = fullName;
-        this.email = email;
-        this.phone = phone;
-        this.status = status;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.version = version;
-    }
-
-    public UUID getId() { return id; }
-    public DocumentType getDocumentType() { return documentType; }
-    public String getDocumentNumber() { return documentNumber; }
-    public String getFullName() { return fullName; }
-    public String getEmail() { return email; }
-    public String getPhone() { return phone; }
-    public CustomerStatus getStatus() { return status; }
-    public Instant getCreatedAt() { return createdAt; }
-    public Instant getUpdatedAt() { return updatedAt; }
-    public Long getVersion() { return version; }
 }

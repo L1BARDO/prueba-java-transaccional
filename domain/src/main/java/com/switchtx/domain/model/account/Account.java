@@ -5,6 +5,8 @@ import com.switchtx.domain.exception.ErrorCode;
 import com.switchtx.domain.model.shared.Guard;
 import com.switchtx.domain.model.shared.Money;
 
+import lombok.Getter;
+
 import java.time.Instant;
 import java.util.Currency;
 import java.util.UUID;
@@ -13,6 +15,7 @@ import java.util.UUID;
  * Cuenta bancaria. Es la única dueña de su saldo: todo movimiento de dinero pasa por
  * {@link #credit(Money, Instant)} o {@link #debit(Money, Instant)}, que protegen las invariantes.
  */
+@Getter
 public final class Account {
 
     private final UUID id;
@@ -124,15 +127,4 @@ public final class Account {
         return new BusinessRuleViolationException(ErrorCode.INVALID_STATUS_TRANSITION,
                 "La cuenta %s no puede pasar de %s a %s".formatted(accountNumber, status, target));
     }
-
-    public UUID getId() { return id; }
-    public String getAccountNumber() { return accountNumber; }
-    public UUID getCustomerId() { return customerId; }
-    public AccountType getType() { return type; }
-    public Currency getCurrency() { return currency; }
-    public Money getBalance() { return balance; }
-    public AccountStatus getStatus() { return status; }
-    public Instant getCreatedAt() { return createdAt; }
-    public Instant getUpdatedAt() { return updatedAt; }
-    public Long getVersion() { return version; }
 }

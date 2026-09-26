@@ -4,11 +4,14 @@ import com.switchtx.domain.exception.BusinessRuleViolationException;
 import com.switchtx.domain.exception.ErrorCode;
 import com.switchtx.domain.model.shared.Guard;
 
+import lombok.Getter;
+
 import java.time.Instant;
 import java.util.Locale;
 import java.util.UUID;
 
 /** Titular de cuentas. La baja es lógica (estado INACTIVE) para conservar la trazabilidad. */
+@Getter
 public final class Customer {
 
     private final UUID id;
@@ -78,15 +81,4 @@ public final class Customer {
     private static String normalizeEmail(String email) {
         return Guard.notBlank(email, "email", 150).toLowerCase(Locale.ROOT);
     }
-
-    public UUID getId() { return id; }
-    public DocumentType getDocumentType() { return documentType; }
-    public String getDocumentNumber() { return documentNumber; }
-    public String getFullName() { return fullName; }
-    public String getEmail() { return email; }
-    public String getPhone() { return phone; }
-    public CustomerStatus getStatus() { return status; }
-    public Instant getCreatedAt() { return createdAt; }
-    public Instant getUpdatedAt() { return updatedAt; }
-    public Long getVersion() { return version; }
 }

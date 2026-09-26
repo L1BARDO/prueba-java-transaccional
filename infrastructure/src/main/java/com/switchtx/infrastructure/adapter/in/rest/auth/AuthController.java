@@ -6,22 +6,16 @@ import com.switchtx.application.port.in.auth.LoginCommand;
 import com.switchtx.application.port.in.auth.LoginUseCase;
 import com.switchtx.infrastructure.security.JwtTokenProvider;
 import com.switchtx.infrastructure.security.UserPrincipal;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequiredArgsConstructor
 public class AuthController implements AuthApi {
 
     private final LoginUseCase loginUseCase;
     private final CurrentUserUseCase currentUserUseCase;
     private final JwtTokenProvider tokenProvider;
-
-    public AuthController(LoginUseCase loginUseCase,
-                          CurrentUserUseCase currentUserUseCase,
-                          JwtTokenProvider tokenProvider) {
-        this.loginUseCase = loginUseCase;
-        this.currentUserUseCase = currentUserUseCase;
-        this.tokenProvider = tokenProvider;
-    }
 
     @Override
     public LoginResponse login(LoginRequest request) {

@@ -10,6 +10,12 @@
       "key": "baseUrl",
       "value": "http://localhost:8080",
       "type": "string"
+    },
+    {
+      "key": "jwtToken",
+      "value": "",
+      "type": "string",
+      "description": "Token JWT de autenticación generado automáticamente al hacer login"
     }
   ],
   "auth": {
@@ -36,9 +42,10 @@
                   "pm.test(\"Status code is 200\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
-                  "pm.test(\"Token JWT generado y guardado\", function () {",
+                  "pm.test(\"Token JWT generado y guardado para todas las peticiones\", function () {",
                   "    var json = pm.response.json();",
-                  "    pm.expect(json.token).to.be.a('string');",
+                  "    pm.expect(json.token).to.be.a(\"string\");",
+                  "    pm.collectionVariables.set(\"jwtToken\", json.token);",
                   "    pm.environment.set(\"jwtToken\", json.token);",
                   "});"
                 ],
@@ -63,8 +70,15 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "auth", "login"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
             },
             "description": "Autentica al administrador y guarda el token JWT en la variable de entorno jwtToken."
           }
@@ -79,9 +93,10 @@
                   "pm.test(\"Status code is 200\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
-                  "pm.test(\"Token JWT generado para operador\", function () {",
+                  "pm.test(\"Token JWT generado y guardado para todas las peticiones\", function () {",
                   "    var json = pm.response.json();",
-                  "    pm.expect(json.token).to.be.a('string');",
+                  "    pm.expect(json.token).to.be.a(\"string\");",
+                  "    pm.collectionVariables.set(\"jwtToken\", json.token);",
                   "    pm.environment.set(\"jwtToken\", json.token);",
                   "});"
                 ],
@@ -106,8 +121,15 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "auth", "login"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
             },
             "description": "Autentica al operador del sistema."
           }
@@ -122,9 +144,10 @@
                   "pm.test(\"Status code is 200\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
-                  "pm.test(\"Token JWT generado para cliente\", function () {",
+                  "pm.test(\"Token JWT generado y guardado para todas las peticiones\", function () {",
                   "    var json = pm.response.json();",
-                  "    pm.expect(json.token).to.be.a('string');",
+                  "    pm.expect(json.token).to.be.a(\"string\");",
+                  "    pm.collectionVariables.set(\"jwtToken\", json.token);",
                   "    pm.environment.set(\"jwtToken\", json.token);",
                   "});"
                 ],
@@ -149,8 +172,15 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "auth", "login"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
             },
             "description": "Autentica al cliente con rol CUSTOMER."
           }
@@ -191,8 +221,15 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "auth", "login"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
             },
             "description": "Intento de login con usuario bloqueado. Debe responder 403 USER_LOCKED."
           }
@@ -220,13 +257,37 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/v1/auth/me",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "auth", "me"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "me"
+              ]
             },
-            "description": "Devuelve la información del usuario autenticado a partir del token JWT."
+            "description": "Devuelve la información del usuario autenticado a partir del token JWT.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         }
       ]
@@ -261,6 +322,12 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
               }
             ],
             "body": {
@@ -269,10 +336,26 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/customers",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "customers"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "customers"
+              ]
             },
-            "description": "Registra un nuevo cliente titular en estado ACTIVE."
+            "description": "Registra un nuevo cliente titular en estado ACTIVE.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         },
         {
@@ -296,13 +379,37 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/v1/customers/{{customerId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "customers", "{{customerId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "customers",
+                "{{customerId}}"
+              ]
             },
-            "description": "Obtiene el detalle de un cliente por su UUID."
+            "description": "Obtiene el detalle de un cliente por su UUID.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         },
         {
@@ -327,11 +434,24 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/v1/customers?status=ACTIVE&page=0&size=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "customers"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "customers"
+              ],
               "query": [
                 {
                   "key": "status",
@@ -347,7 +467,17 @@
                 }
               ]
             },
-            "description": "Lista clientes con filtro opcional de estado y paginación."
+            "description": "Lista clientes con filtro opcional de estado y paginación.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         },
         {
@@ -371,6 +501,12 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
               }
             ],
             "body": {
@@ -379,10 +515,27 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/customers/{{customerId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "customers", "{{customerId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "customers",
+                "{{customerId}}"
+              ]
             },
-            "description": "Actualiza nombre, teléfono y correo electrónico de un cliente existente."
+            "description": "Actualiza nombre, teléfono y correo electrónico de un cliente existente.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         },
         {
@@ -402,16 +555,50 @@
           ],
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/v1/customers/{{customerId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "customers", "{{customerId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "customers",
+                "{{customerId}}"
+              ]
             },
-            "description": "Inactiva un cliente (solo si no tiene cuentas abiertas)."
+            "description": "Inactiva un cliente (solo si no tiene cuentas abiertas).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         }
-      ]
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{jwtToken}}",
+            "type": "string"
+          }
+        ]
+      }
     },
     {
       "name": "Cuentas",
@@ -444,6 +631,12 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
               }
             ],
             "body": {
@@ -452,10 +645,26 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/accounts",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "accounts"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts"
+              ]
             },
-            "description": "Apertura de una cuenta de ahorros en COP con saldo inicial cero."
+            "description": "Apertura de una cuenta de ahorros en COP con saldo inicial cero.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         },
         {
@@ -484,6 +693,12 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
               }
             ],
             "body": {
@@ -492,10 +707,26 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/accounts",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "accounts"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts"
+              ]
             },
-            "description": "Apertura de una segunda cuenta para pruebas de transferencias entre cuentas."
+            "description": "Apertura de una segunda cuenta para pruebas de transferencias entre cuentas.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         },
         {
@@ -520,13 +751,37 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/v1/accounts/{{accountId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "accounts", "{{accountId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{accountId}}"
+              ]
             },
-            "description": "Consulta el saldo y estado actual de una cuenta."
+            "description": "Consulta el saldo y estado actual de una cuenta.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         },
         {
@@ -546,11 +801,24 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/v1/accounts?customerId=a0000000-0000-4000-8000-000000000001&status=ACTIVE&page=0&size=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "accounts"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts"
+              ],
               "query": [
                 {
                   "key": "customerId",
@@ -570,7 +838,17 @@
                 }
               ]
             },
-            "description": "Lista cuentas aplicando filtros por titular o estado."
+            "description": "Lista cuentas aplicando filtros por titular o estado.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         },
         {
@@ -594,11 +872,26 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/v1/accounts/b0000000-0000-4000-8000-000000000001/movements?page=0&size=20",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "accounts", "b0000000-0000-4000-8000-000000000001", "movements"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "b0000000-0000-4000-8000-000000000001",
+                "movements"
+              ],
               "query": [
                 {
                   "key": "page",
@@ -610,7 +903,17 @@
                 }
               ]
             },
-            "description": "Libro mayor (ledger) inmutable con saldo posterior a cada operación."
+            "description": "Libro mayor (ledger) inmutable con saldo posterior a cada operación.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         },
         {
@@ -638,6 +941,12 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
               }
             ],
             "body": {
@@ -646,10 +955,28 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/accounts/{{accountId}}/status",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "accounts", "{{accountId}}", "status"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{accountId}}",
+                "status"
+              ]
             },
-            "description": "Bloquea preventivamente una cuenta."
+            "description": "Bloquea preventivamente una cuenta.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         },
         {
@@ -677,6 +1004,12 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
               }
             ],
             "body": {
@@ -685,10 +1018,28 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/accounts/{{accountId}}/status",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "accounts", "{{accountId}}", "status"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{accountId}}",
+                "status"
+              ]
             },
-            "description": "Reactiva una cuenta bloqueada."
+            "description": "Reactiva una cuenta bloqueada.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         },
         {
@@ -708,16 +1059,50 @@
           ],
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/v1/accounts/{{accountId2}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "accounts", "{{accountId2}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{accountId2}}"
+              ]
             },
-            "description": "Cierra definitivamente una cuenta (exige saldo 0)."
+            "description": "Cierra definitivamente una cuenta (exige saldo 0).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         }
-      ]
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{jwtToken}}",
+            "type": "string"
+          }
+        ]
+      }
     },
     {
       "name": "Transacciones",
@@ -756,6 +1141,12 @@
               {
                 "key": "Idempotency-Key",
                 "value": "{{$guid}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
               }
             ],
             "body": {
@@ -764,10 +1155,27 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/transactions/deposits",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "transactions", "deposits"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transactions",
+                "deposits"
+              ]
             },
-            "description": "Acredita fondos a una cuenta bancaria con llave de idempotencia única."
+            "description": "Acredita fondos a una cuenta bancaria con llave de idempotencia única.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         },
         {
@@ -800,6 +1208,12 @@
               {
                 "key": "Idempotency-Key",
                 "value": "{{$guid}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
               }
             ],
             "body": {
@@ -808,10 +1222,27 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/transactions/withdrawals",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "transactions", "withdrawals"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transactions",
+                "withdrawals"
+              ]
             },
-            "description": "Debita fondos de una cuenta bancaria activa con saldo suficiente."
+            "description": "Debita fondos de una cuenta bancaria activa con saldo suficiente.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         },
         {
@@ -846,6 +1277,12 @@
               {
                 "key": "Idempotency-Key",
                 "value": "{{$guid}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
               }
             ],
             "body": {
@@ -854,10 +1291,27 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/transactions/transfers",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "transactions", "transfers"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transactions",
+                "transfers"
+              ]
             },
-            "description": "Transfiere saldo de forma atómica entre dos cuentas con bloqueo ordenado."
+            "description": "Transfiere saldo de forma atómica entre dos cuentas con bloqueo ordenado.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         },
         {
@@ -892,6 +1346,12 @@
               {
                 "key": "Idempotency-Key",
                 "value": "seed-0001"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
               }
             ],
             "body": {
@@ -900,10 +1360,27 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/transactions/deposits",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "transactions", "deposits"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transactions",
+                "deposits"
+              ]
             },
-            "description": "Reintento exacto con la llave 'seed-0001'. Devuelve la transacción original con 200 OK e Idempotent-Replayed: true."
+            "description": "Reintento exacto con la llave 'seed-0001'. Devuelve la transacción original con 200 OK e Idempotent-Replayed: true.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         },
         {
@@ -928,13 +1405,37 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/v1/transactions/{{transactionId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "transactions", "{{transactionId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transactions",
+                "{{transactionId}}"
+              ]
             },
-            "description": "Consulta el detalle y estado de una transacción."
+            "description": "Consulta el detalle y estado de una transacción.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         },
         {
@@ -958,11 +1459,24 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/v1/transactions?accountId=b0000000-0000-4000-8000-000000000001&page=0&size=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "transactions"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transactions"
+              ],
               "query": [
                 {
                   "key": "accountId",
@@ -978,10 +1492,30 @@
                 }
               ]
             },
-            "description": "Lista transacciones filtradas por cuenta, tipo, estado o rango de fechas."
+            "description": "Lista transacciones filtradas por cuenta, tipo, estado o rango de fechas.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         }
-      ]
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{jwtToken}}",
+            "type": "string"
+          }
+        ]
+      }
     },
     {
       "name": "Casos de error",
@@ -1013,6 +1547,12 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
               }
             ],
             "body": {
@@ -1021,10 +1561,27 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/transactions/deposits",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "transactions", "deposits"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transactions",
+                "deposits"
+              ]
             },
-            "description": "Verifica que montos negativos son rechazados con 400 y código VALIDATION_ERROR."
+            "description": "Verifica que montos negativos son rechazados con 400 y código VALIDATION_ERROR.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         },
         {
@@ -1049,13 +1606,37 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/v1/accounts/b0000000-0000-4000-8000-999999999999",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "accounts", "b0000000-0000-4000-8000-999999999999"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "b0000000-0000-4000-8000-999999999999"
+              ]
             },
-            "description": "Verifica que consultar un recurso inexistente devuelve 404 Not Found."
+            "description": "Verifica que consultar un recurso inexistente devuelve 404 Not Found.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         },
         {
@@ -1088,6 +1669,12 @@
               {
                 "key": "Idempotency-Key",
                 "value": "seed-0001"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
               }
             ],
             "body": {
@@ -1096,10 +1683,27 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/transactions/deposits",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "transactions", "deposits"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transactions",
+                "deposits"
+              ]
             },
-            "description": "Reutilizar una llave de idempotencia existente con una operación distinta devuelve 409 Conflict."
+            "description": "Reutilizar una llave de idempotencia existente con una operación distinta devuelve 409 Conflict.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         },
         {
@@ -1128,6 +1732,12 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
               }
             ],
             "body": {
@@ -1136,10 +1746,26 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/customers",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "customers"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "customers"
+              ]
             },
-            "description": "Verifica que registrar un cliente con documento repetido genera 409 Conflict."
+            "description": "Verifica que registrar un cliente con documento repetido genera 409 Conflict.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         },
         {
@@ -1172,6 +1798,12 @@
               {
                 "key": "Idempotency-Key",
                 "value": "{{$guid}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
               }
             ],
             "body": {
@@ -1180,10 +1812,27 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/transactions/withdrawals",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "transactions", "withdrawals"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transactions",
+                "withdrawals"
+              ]
             },
-            "description": "Intento de retiro que supera el saldo. La base de datos revierte y guarda la transacción en estado REJECTED."
+            "description": "Intento de retiro que supera el saldo. La base de datos revierte y guarda la transacción en estado REJECTED.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         },
         {
@@ -1216,6 +1865,12 @@
               {
                 "key": "Idempotency-Key",
                 "value": "{{$guid}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
               }
             ],
             "body": {
@@ -1224,10 +1879,27 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/transactions/deposits",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "transactions", "deposits"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transactions",
+                "deposits"
+              ]
             },
-            "description": "Una cuenta en estado BLOCKED no admite depósitos ni retiros."
+            "description": "Una cuenta en estado BLOCKED no admite depósitos ni retiros.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         },
         {
@@ -1260,6 +1932,12 @@
               {
                 "key": "Idempotency-Key",
                 "value": "{{$guid}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
               }
             ],
             "body": {
@@ -1268,10 +1946,27 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/transactions/transfers",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "transactions", "transfers"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transactions",
+                "transfers"
+              ]
             },
-            "description": "Regla de negocio: la cuenta origen y destino deben ser distintas."
+            "description": "Regla de negocio: la cuenta origen y destino deben ser distintas.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         },
         {
@@ -1304,6 +1999,12 @@
               {
                 "key": "Idempotency-Key",
                 "value": "{{$guid}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
               }
             ],
             "body": {
@@ -1312,10 +2013,27 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/transactions/deposits",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "transactions", "deposits"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transactions",
+                "deposits"
+              ]
             },
-            "description": "Regla de negocio: la divisa de la transacción debe ser la misma de la cuenta."
+            "description": "Regla de negocio: la divisa de la transacción debe ser la misma de la cuenta.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         },
         {
@@ -1340,13 +2058,37 @@
           ],
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/v1/customers/a0000000-0000-4000-8000-000000000001",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "customers", "a0000000-0000-4000-8000-000000000001"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "customers",
+                "a0000000-0000-4000-8000-000000000001"
+              ]
             },
-            "description": "Un cliente no puede inactivarse si conserva cuentas activas o bloqueadas."
+            "description": "Un cliente no puede inactivarse si conserva cuentas activas o bloqueadas.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         },
         {
@@ -1371,16 +2113,50 @@
           ],
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token Bearer JWT generado en login"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/v1/accounts/b0000000-0000-4000-8000-000000000001",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "accounts", "b0000000-0000-4000-8000-000000000001"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "b0000000-0000-4000-8000-000000000001"
+              ]
             },
-            "description": "Una cuenta solo puede cerrarse si su balance es exactamente 0.00."
+            "description": "Una cuenta solo puede cerrarse si su balance es exactamente 0.00.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwtToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         }
-      ]
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{jwtToken}}",
+            "type": "string"
+          }
+        ]
+      }
     }
   ]
 }

@@ -18,11 +18,13 @@ import com.switchtx.domain.model.customer.CustomerStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import lombok.RequiredArgsConstructor;
+
 import java.time.Clock;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.UUID;
 
+@RequiredArgsConstructor
 public class CustomerService implements CustomerCommandUseCase, CustomerQueryUseCase {
 
     private static final Logger log = LogManager.getLogger(CustomerService.class);
@@ -31,14 +33,6 @@ public class CustomerService implements CustomerCommandUseCase, CustomerQueryUse
     private final AccountRepositoryPort accounts;
     private final UnitOfWork unitOfWork;
     private final Clock clock;
-
-    public CustomerService(CustomerRepositoryPort customers, AccountRepositoryPort accounts,
-                           UnitOfWork unitOfWork, Clock clock) {
-        this.customers = Objects.requireNonNull(customers);
-        this.accounts = Objects.requireNonNull(accounts);
-        this.unitOfWork = Objects.requireNonNull(unitOfWork);
-        this.clock = Objects.requireNonNull(clock);
-    }
 
     @Override
     public Customer register(RegisterCustomerCommand command) {

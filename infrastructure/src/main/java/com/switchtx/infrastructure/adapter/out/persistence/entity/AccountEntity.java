@@ -12,6 +12,12 @@ import jakarta.persistence.Version;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
@@ -19,6 +25,10 @@ import java.util.UUID;
 /** Las relaciones se modelan por id (no @ManyToOne): cada agregado se carga de forma independiente. */
 @Entity
 @Table(name = "accounts")
+@Getter
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class AccountEntity {
 
     @Id
@@ -53,34 +63,4 @@ public class AccountEntity {
 
     @Version
     private Long version;
-
-    protected AccountEntity() {
-        // requerido por JPA
-    }
-
-    public AccountEntity(UUID id, String accountNumber, UUID customerId, AccountType accountType, String currency,
-                         BigDecimal balance, AccountStatus status, Instant createdAt, Instant updatedAt,
-                         Long version) {
-        this.id = id;
-        this.accountNumber = accountNumber;
-        this.customerId = customerId;
-        this.accountType = accountType;
-        this.currency = currency;
-        this.balance = balance;
-        this.status = status;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.version = version;
-    }
-
-    public UUID getId() { return id; }
-    public String getAccountNumber() { return accountNumber; }
-    public UUID getCustomerId() { return customerId; }
-    public AccountType getAccountType() { return accountType; }
-    public String getCurrency() { return currency; }
-    public BigDecimal getBalance() { return balance; }
-    public AccountStatus getStatus() { return status; }
-    public Instant getCreatedAt() { return createdAt; }
-    public Instant getUpdatedAt() { return updatedAt; }
-    public Long getVersion() { return version; }
 }

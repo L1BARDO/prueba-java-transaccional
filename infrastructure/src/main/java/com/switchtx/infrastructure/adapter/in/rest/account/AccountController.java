@@ -8,25 +8,21 @@ import com.switchtx.application.port.in.account.OpenAccountCommand;
 import com.switchtx.domain.model.account.Account;
 import com.switchtx.domain.model.account.AccountStatus;
 import com.switchtx.infrastructure.adapter.in.rest.common.PageResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.UUID;
 
-import org.springframework.security.access.prepost.PreAuthorize;
-
 @RestController
+@RequiredArgsConstructor
 public class AccountController implements AccountApi {
 
     private final AccountCommandUseCase commands;
     private final AccountQueryUseCase queries;
-
-    public AccountController(AccountCommandUseCase commands, AccountQueryUseCase queries) {
-        this.commands = commands;
-        this.queries = queries;
-    }
 
     @Override
     @PreAuthorize("hasAuthority('ACCOUNT_CREATE')")

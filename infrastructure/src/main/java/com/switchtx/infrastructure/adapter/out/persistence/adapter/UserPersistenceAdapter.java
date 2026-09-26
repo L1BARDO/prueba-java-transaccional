@@ -9,6 +9,7 @@ import com.switchtx.infrastructure.adapter.out.persistence.entity.PermissionEnti
 import com.switchtx.infrastructure.adapter.out.persistence.entity.RoleEntity;
 import com.switchtx.infrastructure.adapter.out.persistence.entity.UserEntity;
 import com.switchtx.infrastructure.adapter.out.persistence.repository.UserJpaRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -18,13 +19,10 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Component
+@RequiredArgsConstructor
 public class UserPersistenceAdapter implements UserRepositoryPort {
 
     private final UserJpaRepository repository;
-
-    public UserPersistenceAdapter(UserJpaRepository repository) {
-        this.repository = repository;
-    }
 
     @Override
     public Optional<User> findByUsername(String username) {

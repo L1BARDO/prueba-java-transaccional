@@ -10,18 +10,15 @@ import com.switchtx.domain.exception.ErrorCode;
 import com.switchtx.domain.exception.ResourceNotFoundException;
 import com.switchtx.domain.model.transaction.Transaction;
 
-import java.util.Objects;
+import lombok.RequiredArgsConstructor;
+
 import java.util.UUID;
 
+@RequiredArgsConstructor
 public class TransactionQueryService implements TransactionQueryUseCase {
 
     private final TransactionRepositoryPort transactions;
     private final UnitOfWork unitOfWork;
-
-    public TransactionQueryService(TransactionRepositoryPort transactions, UnitOfWork unitOfWork) {
-        this.transactions = Objects.requireNonNull(transactions);
-        this.unitOfWork = Objects.requireNonNull(unitOfWork);
-    }
 
     @Override
     public Transaction getById(UUID transactionId) {

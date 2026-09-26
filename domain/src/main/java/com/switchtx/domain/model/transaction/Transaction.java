@@ -3,12 +3,15 @@ package com.switchtx.domain.model.transaction;
 import com.switchtx.domain.exception.ErrorCode;
 import com.switchtx.domain.model.shared.Guard;
 
+import lombok.Getter;
+
 import java.time.Instant;
 import java.util.UUID;
 
 /**
  * Registro inmutable de una operación procesada por el switch (aplicada o rechazada).
  */
+@Getter
 public final class Transaction {
 
     private final UUID id;
@@ -56,12 +59,5 @@ public final class Transaction {
         return value != null && value.length() > 255 ? value.substring(0, 255) : value;
     }
 
-    public UUID getId() { return id; }
-    public String getReference() { return reference; }
-    public TransactionDetails getDetails() { return details; }
     public TransactionType getType() { return details.type(); }
-    public TransactionStatus getStatus() { return status; }
-    public ErrorCode getFailureCode() { return failureCode; }
-    public String getFailureReason() { return failureReason; }
-    public Instant getCreatedAt() { return createdAt; }
 }

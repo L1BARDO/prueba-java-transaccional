@@ -11,6 +11,12 @@ import org.hibernate.annotations.Immutable;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
@@ -18,6 +24,10 @@ import java.util.UUID;
 @Entity
 @Immutable
 @Table(name = "account_movements")
+@Getter
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class MovementEntity extends InsertOnlyEntity {
 
     @Id
@@ -45,30 +55,4 @@ public class MovementEntity extends InsertOnlyEntity {
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
-
-    protected MovementEntity() {
-        // requerido por JPA
-    }
-
-    public MovementEntity(UUID id, UUID transactionId, UUID accountId, MovementType type, BigDecimal amount,
-                          BigDecimal balanceAfter, String currency, Instant createdAt) {
-        this.id = id;
-        this.transactionId = transactionId;
-        this.accountId = accountId;
-        this.type = type;
-        this.amount = amount;
-        this.balanceAfter = balanceAfter;
-        this.currency = currency;
-        this.createdAt = createdAt;
-    }
-
-    @Override
-    public UUID getId() { return id; }
-    public UUID getTransactionId() { return transactionId; }
-    public UUID getAccountId() { return accountId; }
-    public MovementType getType() { return type; }
-    public BigDecimal getAmount() { return amount; }
-    public BigDecimal getBalanceAfter() { return balanceAfter; }
-    public String getCurrency() { return currency; }
-    public Instant getCreatedAt() { return createdAt; }
 }

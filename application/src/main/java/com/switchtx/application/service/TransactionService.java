@@ -37,6 +37,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import lombok.RequiredArgsConstructor;
+
 /**
  * Motor del switch: aplica depósitos, retiros y transferencias de forma atómica.
  *
@@ -49,6 +51,7 @@ import java.util.stream.Collectors;
  *       transacción como REJECTED en una transacción independiente (auditoría).</li>
  * </ol>
  */
+@RequiredArgsConstructor
 public class TransactionService implements DepositUseCase, WithdrawalUseCase, TransferUseCase {
 
     private static final Logger log = LogManager.getLogger(TransactionService.class);
@@ -59,17 +62,6 @@ public class TransactionService implements DepositUseCase, WithdrawalUseCase, Tr
     private final TransactionReferenceGenerator referenceGenerator;
     private final UnitOfWork unitOfWork;
     private final Clock clock;
-
-    public TransactionService(AccountRepositoryPort accounts, TransactionRepositoryPort transactions,
-                              MovementRepositoryPort movements, TransactionReferenceGenerator referenceGenerator,
-                              UnitOfWork unitOfWork, Clock clock) {
-        this.accounts = Objects.requireNonNull(accounts);
-        this.transactions = Objects.requireNonNull(transactions);
-        this.movements = Objects.requireNonNull(movements);
-        this.referenceGenerator = Objects.requireNonNull(referenceGenerator);
-        this.unitOfWork = Objects.requireNonNull(unitOfWork);
-        this.clock = Objects.requireNonNull(clock);
-    }
 
     @Override
     public TransactionResult deposit(DepositCommand command) {

@@ -12,6 +12,7 @@ import com.switchtx.infrastructure.adapter.out.persistence.mapper.ConstraintViol
 import com.switchtx.infrastructure.adapter.out.persistence.mapper.PersistenceMapper;
 import com.switchtx.infrastructure.adapter.out.persistence.repository.CustomerJpaRepository;
 import com.switchtx.infrastructure.adapter.out.persistence.repository.Specifications;
+import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
@@ -19,13 +20,10 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Component
+@RequiredArgsConstructor
 public class CustomerPersistenceAdapter implements CustomerRepositoryPort {
 
     private final CustomerJpaRepository repository;
-
-    public CustomerPersistenceAdapter(CustomerJpaRepository repository) {
-        this.repository = repository;
-    }
 
     @Override
     public Customer save(Customer customer) {

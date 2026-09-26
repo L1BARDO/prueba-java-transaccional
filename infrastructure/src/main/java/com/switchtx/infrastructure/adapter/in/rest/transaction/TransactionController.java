@@ -15,8 +15,10 @@ import com.switchtx.domain.model.transaction.TransactionType;
 import com.switchtx.infrastructure.adapter.in.rest.common.ApiHeaders;
 import com.switchtx.infrastructure.adapter.in.rest.common.ApiPaths;
 import com.switchtx.infrastructure.adapter.in.rest.common.PageResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -24,23 +26,14 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.UUID;
 
-import org.springframework.security.access.prepost.PreAuthorize;
-
 @RestController
+@RequiredArgsConstructor
 public class TransactionController implements TransactionApi {
 
     private final DepositUseCase depositUseCase;
     private final WithdrawalUseCase withdrawalUseCase;
     private final TransferUseCase transferUseCase;
     private final TransactionQueryUseCase queries;
-
-    public TransactionController(DepositUseCase depositUseCase, WithdrawalUseCase withdrawalUseCase,
-                                 TransferUseCase transferUseCase, TransactionQueryUseCase queries) {
-        this.depositUseCase = depositUseCase;
-        this.withdrawalUseCase = withdrawalUseCase;
-        this.transferUseCase = transferUseCase;
-        this.queries = queries;
-    }
 
     @Override
     @PreAuthorize("hasAuthority('TRANSACTION_DEPOSIT')")

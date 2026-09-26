@@ -14,9 +14,11 @@ import com.switchtx.domain.model.user.User;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.time.Clock;
-import java.util.Objects;
+import lombok.RequiredArgsConstructor;
 
+import java.time.Clock;
+
+@RequiredArgsConstructor
 public class AuthService implements LoginUseCase, CurrentUserUseCase {
 
     private static final Logger log = LogManager.getLogger(AuthService.class);
@@ -26,14 +28,6 @@ public class AuthService implements LoginUseCase, CurrentUserUseCase {
     private final PasswordEncoderPort passwordEncoder;
     private final UnitOfWork unitOfWork;
     private final Clock clock;
-
-    public AuthService(UserRepositoryPort userRepository, PasswordEncoderPort passwordEncoder,
-                       UnitOfWork unitOfWork, Clock clock) {
-        this.userRepository = Objects.requireNonNull(userRepository);
-        this.passwordEncoder = Objects.requireNonNull(passwordEncoder);
-        this.unitOfWork = Objects.requireNonNull(unitOfWork);
-        this.clock = Objects.requireNonNull(clock);
-    }
 
     @Override
     public AuthenticatedUser authenticate(LoginCommand command) {
