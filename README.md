@@ -1,6 +1,29 @@
-# Switch Transaccional — Backend API
+# Switch Transaccional — Solución Bancaria Full Stack
 
-API REST de alto rendimiento y consistencia bancaria desarrollada en **Java 21** y **Spring Boot 3.5**, implementando **Arquitectura Hexagonal (Puertos y Adaptadores)** y persistencia en **PostgreSQL**. Administra clientes, cuentas de ahorro/corrientes, y procesa transacciones financieras (depósitos, retiros y transferencias) con soporte de idempotencia, libro mayor contable (ledger inmutable), bloqueo pesimista anti-deadlocks y manejo estructurado de errores bajo el estándar RFC 9457.
+Solución bancaria integral compuesta por una **API REST de alto rendimiento en Java 21 + Spring Boot 3.5** (arquitectura hexagonal, concurrencia pesimista, doble partida ledger, RFC 9457 y seguridad JWT/RBAC) y un **Frontend SPA moderno en Angular 18** (Standalone Components, Signals e interceptores reactivos).
+
+---
+
+### Estructura del Repositorio
+
+```text
+prueba-java-transaccional/
+├── .github/          # Automatización CI/CD (GitHub Actions para build, tests y deploy)
+├── backend/          # API REST, Dominio, Aplicación, Persistencia, Base de Datos, MCP y Postman
+│   ├── application/  # Casos de uso y puertos (Hexagonal puro)
+│   ├── buildSrc/     # Convenciones de Gradle Kotlin DSL
+│   ├── database/     # Scripts SQL deterministas de PostgreSQL (00 al 05)
+│   ├── domain/       # Modelos puros, invariantes y Value Objects (Java 21)
+│   ├── gradle/       # Gradle Wrapper 9.8
+│   ├── infrastructure/ # Controladores Spring MVC, Seguridad JWT y Adaptadores JPA
+│   ├── mcp/          # Servidor Model Context Protocol para consultas de base de datos
+│   └── postman/      # Colección Postman v2.1 y variables de entorno
+├── frontend/         # Aplicación Web SPA en Angular 18 (TypeScript)
+│   ├── src/app/core/ # Modelos, interceptores HTTP, guards y servicios de negocio
+│   ├── src/app/features/ # Vistas de Login, Dashboard, Clientes, Cuentas y Transacciones
+│   └── src/app/shared/ # Componentes compartidos y navegación
+└── README.md         # Documentación técnica y guía de puesta en marcha
+```
 
 ---
 
@@ -35,7 +58,7 @@ Los scripts eliminan la base si existe (`DROP DATABASE WITH FORCE`), la crean, h
 #### En Linux / macOS:
 ```bash
 # Con credenciales por defecto (postgres / postgres):
-cd database
+cd backend/database
 chmod +x reset_database.sh
 ./reset_database.sh
 
@@ -48,7 +71,7 @@ DB_USER=mi_usuario DB_PASSWORD=mi_clave ./reset_database.sh
 
 #### En Windows:
 ```cmd
-cd database
+cd backend\database
 reset_database.bat
 
 :: Personalizando credenciales:
@@ -62,35 +85,38 @@ reset_database.bat --sin-datos
 
 ---
 
-## 3. Ejecución y Pruebas
+## 3. Ejecución y Pruebas del Backend
 
-### Ejecutar la Aplicación en Desarrollo
+### Ejecutar la Aplicación Backend en Desarrollo
 ```bash
+cd backend
 ./gradlew :switch-infrastructure:bootRun
 ```
 
 ### Compilar y Empaquetar el JAR Ejecutable
 ```bash
+cd backend
 ./gradlew build
 ```
 El archivo JAR autoejecutable se generará en:
-`infrastructure/build/libs/switch-transaccional.jar`
+`backend/infrastructure/build/libs/switch-transaccional.jar`
 
 ### Ejecutar el JAR
 ```bash
-java -jar infrastructure/build/libs/switch-transaccional.jar
+java -jar backend/infrastructure/build/libs/switch-transaccional.jar
 
 # Con variables de entorno personalizadas:
-DB_HOST=127.0.0.1 DB_USER=postgres DB_PASSWORD=secreto java -jar infrastructure/build/libs/switch-transaccional.jar
+DB_HOST=127.0.0.1 DB_USER=postgres DB_PASSWORD=secreto java -jar backend/infrastructure/build/libs/switch-transaccional.jar
 ```
 
 ### Ejecutar la Suite de Tests
 ```bash
 # Ejecutar todos los tests unitarios y de integración de la solución multi-módulo:
+cd backend
 ./gradlew test
 ```
 Los informes HTML detallados de ejecución se generan en:
-`infrastructure/build/reports/tests/test/index.html` (y en cada submódulo correspondiente).
+`backend/infrastructure/build/reports/tests/test/index.html` (y en cada submódulo correspondiente).
 
 ---
 
@@ -441,12 +467,72 @@ El esquema de autorización está **completamente parametrizado en base de datos
 
 ## 11. Colección y Entorno de Postman
 
-En la carpeta `postman/` se encuentran los archivos listos para importar en Postman:
+En la carpeta `backend/postman/` se encuentran los archivos listos para importar en Postman:
 
-- **Colección**: `postman/Switch-Transaccional.postman_collection.json` (formato v2.1.0, organizada en carpetas *Autenticación*, *Clientes*, *Cuentas*, *Transacciones* y *Casos de error*).
+- **Colección**: `backend/postman/Switch-Transaccional.postman_collection.json` (formato v2.1.0, organizada en carpetas *Autenticación*, *Clientes*, *Cuentas*, *Transacciones* y *Casos de error*).
   - Incluye autenticación Bearer a nivel de colección referenciando `{{jwtToken}}`.
   - La petición inicial `POST /api/v1/auth/login` (Admin/Operador) almacena automáticamente el token JWT en el entorno (`jwtToken`).
   - Los endpoints de transacciones generan dinámicamente cabeceras `Idempotency-Key` mediante `{{$guid}}`.
   - Scripts de test automáticos que verifican códigos de estado HTTP, contratos JSON y ProblemDetail RFC 9457, actualizando variables (`customerId`, `accountId`, `transactionId`).
-- **Entorno Local**: `postman/local.postman_environment.json` (con `baseUrl = http://localhost:8080`, `jwtToken` y los UUIDs del seed listos para usar).
+- **Entorno Local**: `backend/postman/local.postman_environment.json` (con `baseUrl = http://localhost:8080`, `jwtToken` y los UUIDs del seed listos para usar).
+
+---
+
+## 12. Frontend Angular 18 — Puesta en Marcha
+
+El frontend es una aplicación web SPA interactiva desarrollada en **Angular 18**:
+* **Arquitectura Standalone**: Componentes modernos (`standalone: true`), rutas declarativas y Signal APIs de Angular sin módulos NgModule obsoletos.
+* **Seguridad y Sesión JWT**: Gestión de sesión en cliente, guard de rutas (`authGuard`) y un `authInterceptor` que inyecta automáticamente la cabecera `Authorization: Bearer <token>` y un UUID único en `X-Correlation-Id`.
+* **Idempotencia Garantizada**: En cada operación de dinero (depósito, retiro o transferencia) genera automáticamente una cabecera `Idempotency-Key` aleatoria (`crypto.randomUUID()`) previniendo dobles cargos por reintentos de red o clics repetidos.
+* **Manejo de Errores RFC 9457**: Intercepta respuestas `ProblemDetail` (códigos 400, 401, 403, 409, 422) y muestra mensajes legibles al usuario con el motivo del rechazo.
+* **Historial con Scroll Infinito**: Tabla de movimientos y transacciones que muestra inicialmente 8 registros y carga reactivamente los siguientes bloques al desplazarse verticalmente.
+* **Notificaciones Toast y Confirmaciones**: Sistema de alertas flotantes reactivo con Angular Signals (`success`, `error`, `warning`, `info`) y toasts interactivos de confirmación con botones de acción para operaciones críticas (baja de cliente, bloqueo/activación/cierre de cuenta, retiros y transferencias).
+* **Acceso Demo Rápido**: En la pantalla de login se incluyen botones de acceso directo para ingresar con cualquiera de los perfiles del sistema (`admin`, `operador`, `auditor`, `ana.perez`, `bloqueado`).
+
+### Requisitos del Frontend
+* **Node.js**: v18+ o v22 LTS (recomendado).
+* **NPM**: v10+.
+
+### Ejecución en Modo Desarrollo
+```bash
+cd frontend
+npm install
+npm start
+```
+La aplicación web quedará disponible en:
+👉 **[http://localhost:4200](http://localhost:4200)**
+
+### Compilación para Producción
+```bash
+cd frontend
+npm run build
+```
+Los artefactos estáticos optimizados se generarán en `frontend/dist/frontend/browser/`.
+
+---
+
+## 13. Guía de Inicio Rápido (Levantar Todo Localmente)
+
+Para levantar el ecosistema completo en tu máquina local:
+
+```bash
+# Paso 1: Crear o reiniciar la base de datos PostgreSQL con los datos de prueba
+cd backend/database
+./reset_database.sh    # En Windows: reset_database.bat
+cd ../..
+
+# Paso 2: Iniciar el Backend (Spring Boot en http://localhost:8080)
+cd backend
+./gradlew :switch-infrastructure:bootRun
+
+# Paso 3: En otra terminal, iniciar el Frontend (Angular en http://localhost:4200)
+cd frontend
+npm start
+
+# Paso 4: Abrir en el navegador:
+# Frontend SPA:   http://localhost:4200
+# Swagger UI:     http://localhost:8080/swagger-ui.html
+# Actuator Check: http://localhost:8080/actuator/health
+```
+
 
