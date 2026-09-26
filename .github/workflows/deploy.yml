@@ -1,0 +1,127 @@
+name: CI/CD Pipeline & Deployment
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+  pull_request:
+    branches:
+      - master
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  # =========================================================================
+  # 1. Compilación, validación y ejecución de pruebas
+  # =========================================================================
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Validar Gradle Wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Configurar Gradle con Cache
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/master' && github.ref != 'refs/heads/develop' }}
+
+      - name: Dar permisos de ejecución a gradlew
+        run: chmod +x gradlew
+
+      - name: Ejecutar pruebas unitarias y de integración
+        run: ./gradlew test
+
+      - name: Compilar y empaquetar artefacto ejecutable (JAR)
+        run: ./gradlew :switch-infrastructure:bootJar
+
+      - name: Publicar artefacto compilado
+        uses: actions/upload-artifact@v4
+        with:
+          name: switch-transaccional-jar
+          path: infrastructure/build/libs/switch-transaccional.jar
+          retention-days: 7
+
+  # =========================================================================
+  # 2. Despliegue en ambiente Develop / Staging
+  # =========================================================================
+  deploy-develop:
+    name: Deploy to Develop (Staging)
+    needs: build-and-test
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.switchtx.internal
+
+    steps:
+      - name: Descargar artefacto compilado
+        uses: actions/download-artifact@v4
+        with:
+          name: switch-transaccional-jar
+          path: build-artifact
+
+      - name: Preparación de despliegue en ambiente Staging
+        run: |
+          echo "========================================================="
+          echo "Desplegando en ambiente: STAGING (Rama develop)"
+          echo "Artefacto listo: build-artifact/switch-transaccional.jar"
+          echo "Commit SHA: ${{ github.sha }}"
+          echo "========================================================="
+          # TODO: Configurar conexión al servidor de staging cuando esté disponible.
+          # Ejemplos habituales:
+          # 1. SSH / SCP hacia VPS / EC2:
+          #    ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST_STAGING }} "systemctl restart switch-transaccional"
+          # 2. Construcción y push de imagen Docker a Container Registry:
+          #    docker build -t ghcr.io/${{ github.repository }}:staging .
+          #    docker push ghcr.io/${{ github.repository }}:staging
+          # 3. Despliegue a Kubernetes / Cloud Run / ECS:
+          #    kubectl rollout restart deployment/switch-transaccional -n staging
+
+  # =========================================================================
+  # 3. Despliegue en ambiente Producción (Master)
+  # =========================================================================
+  deploy-production:
+    name: Deploy to Production (Master)
+    needs: build-and-test
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://api.switchtx.com
+
+    steps:
+      - name: Descargar artefacto compilado
+        uses: actions/download-artifact@v4
+        with:
+          name: switch-transaccional-jar
+          path: build-artifact
+
+      - name: Preparación de despliegue en ambiente Producción
+        run: |
+          echo "========================================================="
+          echo "Desplegando en ambiente: PRODUCCIÓN (Rama master)"
+          echo "Artefacto listo: build-artifact/switch-transaccional.jar"
+          echo "Commit SHA: ${{ github.sha }}"
+          echo "========================================================="
+          # TODO: Configurar conexión al servidor de producción cuando esté disponible.
+          # Ejemplos habituales:
+          # 1. SSH / SCP hacia servidor productivo:
+          #    ssh ${{ secrets.PROD_SSH_USER }}@${{ secrets.PROD_SSH_HOST }} "docker compose pull && docker compose up -d"
+          # 2. Despliegue blue-green o rolling update en cluster:
+          #    kubectl set image deployment/switch-transaccional switch-tx=... --record
