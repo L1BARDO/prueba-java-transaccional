@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Configuración de Log4j2.
+  - Consola: salida legible para desarrollo.
+  - Archivo rotativo: logs/switch-transaccional.log (rota por día o cada 20 MB, conserva 30 archivos).
+  - Archivo de errores: logs/switch-transaccional-error.log (solo WARN y ERROR).
+  Cada línea incluye el correlationId de la petición (header X-Correlation-Id).
+-->
+<Configuration status="WARN" monitorInterval="30">
+
+    <Properties>
+        <Property name="LOG_DIR">${sys:LOG_PATH:-logs}</Property>
+        <Property name="APP_NAME">switch-transaccional</Property>
+        <Property name="PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%15.15t] [%X{correlationId}] %-40.40c{1.} : %msg%n%throwable</Property>
+        <Property name="CONSOLE_PATTERN">%d{HH:mm:ss.SSS} %highlight{%-5level} [%X{correlationId}] %cyan{%-40.40c{1.}} : %msg%n%throwable</Property>
+    </Properties>
+
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${CONSOLE_PATTERN}" disableAnsi="false"/>
+        </Console>
+
+        <RollingFile name="AppFile"
+                     fileName="${LOG_DIR}/${APP_NAME}.log"
+                     filePattern="${LOG_DIR}/archive/${APP_NAME}-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${PATTERN}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="20 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="30"/>
+        </RollingFile>
+
+        <RollingFile name="ErrorFile"
+                     fileName="${LOG_DIR}/${APP_NAME}-error.log"
+                     filePattern="${LOG_DIR}/archive/${APP_NAME}-error-%d{yyyy-MM-dd}-%i.log.gz">
+            <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
+            <PatternLayout pattern="${PATTERN}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="20 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="30"/>
+        </RollingFile>
+
+        <!-- Escritura asíncrona para no penalizar la latencia de las peticiones -->
+        <Async name="AsyncAppFile">
+            <AppenderRef ref="AppFile"/>
+        </Async>
+    </Appenders>
+
+    <Loggers>
+        <Logger name="com.switchtx" level="${sys:APP_LOG_LEVEL:-INFO}" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="AsyncAppFile"/>
+            <AppenderRef ref="ErrorFile"/>
+        </Logger>
+
+        <!-- Pool de conexiones: arranque, cierre y fugas de conexiones -->
+        <Logger name="com.zaxxer.hikari" level="INFO"/>
+
+        <!-- Cambiar a DEBUG para ver el SQL generado por Hibernate -->
+        <Logger name="org.hibernate.SQL" level="WARN"/>
+        <Logger name="org.hibernate.orm.jdbc.bind" level="WARN"/>
+
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="AsyncAppFile"/>
+            <AppenderRef ref="ErrorFile"/>
+        </Root>
+    </Loggers>
+</Configuration>

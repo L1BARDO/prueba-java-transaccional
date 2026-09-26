@@ -1,0 +1,86 @@
+spring:
+  application:
+    name: switch-transaccional
+
+  # ---------------------------------------------------------------------------------
+  # Base de datos PostgreSQL + pool de conexiones HikariCP
+  # Todas las propiedades se pueden sobrescribir con variables de entorno.
+  # ---------------------------------------------------------------------------------
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:switch_transaccional}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: SwitchHikariPool
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
+      minimum-idle: ${DB_POOL_MIN_IDLE:2}
+      connection-timeout: 30000      # ms máximos esperando una conexión libre del pool
+      idle-timeout: 600000           # ms antes de cerrar una conexión ociosa
+      max-lifetime: 1800000          # ms de vida máxima de una conexión
+      validation-timeout: 5000
+      leak-detection-threshold: 60000
+      auto-commit: false             # las transacciones las gestiona Spring
+      # Evita esperas indefinidas por filas bloqueadas (SELECT ... FOR UPDATE)
+      connection-init-sql: SET lock_timeout = '5s'
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate             # el esquema lo crean los scripts de /database; Hibernate solo lo valida
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+        connection:
+          provider_disables_autocommit: true
+
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: true
+
+  mvc:
+    problemdetails:
+      enabled: true
+
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+  error:
+    include-stacktrace: never
+    include-message: never
+
+# Swagger / OpenAPI
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    display-request-duration: true
+  default-produces-media-type: application/json
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+logging:
+  config: classpath:log4j2-spring.xml
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+    expiration-seconds: ${JWT_EXPIRATION_SECONDS:86400}
+    issuer: switch-transaccional

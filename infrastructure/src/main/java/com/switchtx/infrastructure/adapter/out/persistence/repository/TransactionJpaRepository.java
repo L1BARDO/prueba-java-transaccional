@@ -1,0 +1,14 @@
+package com.switchtx.infrastructure.adapter.out.persistence.repository;
+
+import com.switchtx.infrastructure.adapter.out.persistence.entity.TransactionEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+
+import java.util.Optional;
+import java.util.UUID;
+
+public interface TransactionJpaRepository extends JpaRepository<TransactionEntity, UUID>,
+        JpaSpecificationExecutor<TransactionEntity> {
+
+    Optional<TransactionEntity> findByIdempotencyKey(String idempotencyKey);
+}
