@@ -40,3 +40,8 @@ Thumbs.db
 *.bak
 *.tmp
 *~
+
+# Node.js / MCP Server
+node_modules/
+package-lock.json
+.env

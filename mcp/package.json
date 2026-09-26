@@ -1,0 +1,19 @@
+{
+  "name": "switch-transaccional-mcp",
+  "version": "1.0.0",
+  "description": "Servidor MCP para consultar la base de datos de Switch Transaccional (PostgreSQL)",
+  "type": "module",
+  "main": "index.js",
+  "bin": {
+    "switch-mcp": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.6.0",
+    "dotenv": "^16.4.7",
+    "pg": "^8.13.3",
+    "zod": "^3.24.2"
+  }
+}
