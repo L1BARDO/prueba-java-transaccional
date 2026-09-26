@@ -63,7 +63,7 @@ import { Account, CurrencyCode, Transaction } from '../../core/models/models';
             [class.active]="activeTab === 'HISTORY'"
             (click)="setTab('HISTORY')"
           >
-            {{ authService.isCustomer() ? '📋 Mis Transacciones' : '📋 Historial Global' }} (8 por pág.)
+            {{ authService.isCustomer() ? '📋 Mis Transacciones' : '📋 Historial Global' }}
           </button>
         </div>
 
@@ -107,7 +107,7 @@ import { Account, CurrencyCode, Transaction } from '../../core/models/models';
         </div>
 
         <!-- TAB: DEPÓSITO (solo operadores) -->
-        <div *ngIf="activeTab === 'DEPOSIT'" class="tab-content">
+        <div *ngIf="activeTab === 'DEPOSIT' && authService.hasPermission('TRANSACTION_DEPOSIT')" class="tab-content">
           <form (ngSubmit)="submitDeposit()">
             <div class="form-group">
               <label class="form-label">Cuenta Destino</label>
@@ -171,7 +171,7 @@ import { Account, CurrencyCode, Transaction } from '../../core/models/models';
         </div>
 
         <!-- TAB: RETIRO (solo operadores) -->
-        <div *ngIf="activeTab === 'WITHDRAWAL'" class="tab-content">
+        <div *ngIf="activeTab === 'WITHDRAWAL' && authService.hasPermission('TRANSACTION_WITHDRAW')" class="tab-content">
           <form (ngSubmit)="submitWithdrawal()">
             <div class="form-group">
               <label class="form-label">Cuenta Origen</label>
@@ -235,7 +235,7 @@ import { Account, CurrencyCode, Transaction } from '../../core/models/models';
         </div>
 
         <!-- TAB: TRANSFERENCIA (disponible para todos con permiso) -->
-        <div *ngIf="activeTab === 'TRANSFER'" class="tab-content">
+        <div *ngIf="activeTab === 'TRANSFER' && authService.hasPermission('TRANSACTION_TRANSFER')" class="tab-content">
           <form (ngSubmit)="submitTransfer()">
             <div class="form-row">
               <div class="form-group">
@@ -319,7 +319,7 @@ import { Account, CurrencyCode, Transaction } from '../../core/models/models';
         </div>
 
         <!-- TAB: HISTORIAL CON SCROLL INFINITO (8 registros por página) -->
-        <div *ngIf="activeTab === 'HISTORY'" class="tab-content">
+        <div *ngIf="activeTab === 'HISTORY' && authService.hasPermission('TRANSACTION_READ')" class="tab-content">
           <!-- Filtro de cuenta específico para clientes -->
           <div *ngIf="authService.isCustomer() && myAccounts.length > 0" class="filter-box-client">
             <label class="form-label" style="margin-bottom: 0;">Filtrar por mi cuenta:</label>
@@ -622,7 +622,7 @@ import { Account, CurrencyCode, Transaction } from '../../core/models/models';
   `]
 })
 export class TransactionOperationsComponent implements OnInit {
-  activeTab: 'DEPOSIT' | 'WITHDRAWAL' | 'TRANSFER' | 'HISTORY' = 'DEPOSIT';
+  activeTab: 'DEPOSIT' | 'WITHDRAWAL' | 'TRANSFER' | 'HISTORY' = 'HISTORY';
 
   accounts: Account[] = [];
   activeAccounts: Account[] = [];
@@ -673,11 +673,39 @@ export class TransactionOperationsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    if (this.authService.isCustomer()) {
-      this.activeTab = 'TRANSFER';
-    }
+    this.activeTab = this.resolveInitialTab();
     this.loadAccounts();
     this.loadTransactions(true);
+  }
+
+  private resolveInitialTab(): 'DEPOSIT' | 'WITHDRAWAL' | 'TRANSFER' | 'HISTORY' {
+    // Si es Auditor o no posee permisos para registrar transacciones de caja, abrir Historial Global
+    if (
+      this.authService.hasRole('AUDITOR') ||
+      (!this.authService.hasPermission('TRANSACTION_DEPOSIT') &&
+        !this.authService.hasPermission('TRANSACTION_WITHDRAW') &&
+        !this.authService.hasPermission('TRANSACTION_TRANSFER'))
+    ) {
+      return 'HISTORY';
+    }
+
+    if (this.authService.isCustomer()) {
+      return this.authService.hasPermission('TRANSACTION_TRANSFER') ? 'TRANSFER' : 'HISTORY';
+    }
+
+    if (this.authService.hasPermission('TRANSACTION_DEPOSIT')) {
+      return 'DEPOSIT';
+    }
+
+    if (this.authService.hasPermission('TRANSACTION_WITHDRAW')) {
+      return 'WITHDRAWAL';
+    }
+
+    if (this.authService.hasPermission('TRANSACTION_TRANSFER')) {
+      return 'TRANSFER';
+    }
+
+    return 'HISTORY';
   }
 
   setTab(tab: 'DEPOSIT' | 'WITHDRAWAL' | 'TRANSFER' | 'HISTORY'): void {

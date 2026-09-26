@@ -62,6 +62,15 @@ class CustomerControllerTest {
     @MockitoBean
     private CustomerQueryUseCase queries;
 
+    @MockitoBean
+    private com.switchtx.infrastructure.adapter.out.persistence.repository.UserJpaRepository userJpaRepository;
+
+    @MockitoBean
+    private com.switchtx.infrastructure.adapter.out.persistence.repository.RoleJpaRepository roleJpaRepository;
+
+    @MockitoBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
     private final Instant now = Instant.parse("2026-09-26T12:00:00Z");
 
     @Test
@@ -186,5 +195,33 @@ class CustomerControllerTest {
                 .andExpect(jsonPath("$.code").value("CUSTOMER_HAS_OPEN_ACCOUNTS"))
                 .andExpect(jsonPath("$.title").value(ErrorCode.CUSTOMER_HAS_OPEN_ACCOUNTS.defaultMessage()))
                 .andExpect(jsonPath("$.timestamp").value(notNullValue()));
+    }
+
+    @Test
+    @DisplayName("PUT /customers/{id} - 200 OK al actualizar datos de contacto y contraseña")
+    void shouldReturn200WhenUpdatingCustomer() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        Customer customer = Customer.restore(customerId, DocumentType.CC, "1020304050", "Carlos Ruiz Actualizado",
+                "carlos.nuevo@example.com", "+573109876543", com.switchtx.domain.model.customer.CustomerStatus.ACTIVE,
+                now, now, 2L);
+
+        given(commands.update(any())).willReturn(customer);
+        given(userJpaRepository.findByCustomerId(customerId)).willReturn(java.util.Optional.empty());
+
+        com.switchtx.infrastructure.adapter.in.rest.customer.UpdateCustomerRequest request =
+                new com.switchtx.infrastructure.adapter.in.rest.customer.UpdateCustomerRequest(
+                        "Carlos Ruiz Actualizado", "carlos.nuevo@example.com", "+573109876543", "NuevaClave123*");
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/v1/customers/{id}", customerId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fullName").value("Carlos Ruiz Actualizado"))
+                .andExpect(jsonPath("$.email").value("carlos.nuevo@example.com"));
+
+        org.mockito.ArgumentCaptor<com.switchtx.infrastructure.adapter.out.persistence.entity.UserEntity> userCaptor =
+                org.mockito.ArgumentCaptor.forClass(com.switchtx.infrastructure.adapter.out.persistence.entity.UserEntity.class);
+        org.mockito.Mockito.verify(userJpaRepository).save(userCaptor.capture());
+        org.junit.jupiter.api.Assertions.assertNull(userCaptor.getValue().getVersion());
     }
 }

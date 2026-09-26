@@ -52,6 +52,15 @@ class SecurityFilterIntegrationTest {
     @MockitoBean
     private JwtTokenProvider tokenProvider;
 
+    @MockitoBean
+    private com.switchtx.infrastructure.adapter.out.persistence.repository.UserJpaRepository userJpaRepository;
+
+    @MockitoBean
+    private com.switchtx.infrastructure.adapter.out.persistence.repository.RoleJpaRepository roleJpaRepository;
+
+    @MockitoBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
     @Test
     @DisplayName("Petición sin token a endpoint protegido devuelve 401 con ProblemDetail RFC 9457")
     void shouldReturn401WhenNoTokenProvided() throws Exception {

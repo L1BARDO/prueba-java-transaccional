@@ -11,7 +11,6 @@ import { AuthService } from '../../core/services/auth.service';
     <nav class="navbar" *ngIf="authService.isAuthenticated()">
       <div class="nav-container">
         <div class="nav-brand">
-          <span class="brand-icon">⚡</span>
           <strong>Switch Transaccional</strong>
           <span *ngIf="authService.isCustomer()" class="portal-badge">Portal Cliente</span>
         </div>

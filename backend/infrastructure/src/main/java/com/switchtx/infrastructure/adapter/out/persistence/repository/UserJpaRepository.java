@@ -28,6 +28,13 @@ public interface UserJpaRepository extends JpaRepository<UserEntity, UUID> {
     @Query("UPDATE UserEntity u SET u.failedLoginAttempts = 0 WHERE u.id = :userId")
     void resetFailedAttempts(@Param("userId") UUID userId);
 
+    @Query("SELECT u FROM UserEntity u WHERE u.customerId = :customerId")
+    Optional<UserEntity> findByCustomerId(@Param("customerId") UUID customerId);
+
+    @Modifying
+    @Query(value = "INSERT INTO user_roles (user_id, role_id) SELECT :userId, r.id FROM roles r WHERE r.code = 'CUSTOMER' ON CONFLICT DO NOTHING", nativeQuery = true)
+    void assignCustomerRole(@Param("userId") UUID userId);
+
     @Query(value = "SELECT fn_register_failed_login(:username, :maxAttempts)", nativeQuery = true)
     String callRegisterFailedLogin(@Param("username") String username, @Param("maxAttempts") int maxAttempts);
 }
