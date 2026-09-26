@@ -59,8 +59,9 @@ export interface OpenAccountRequest {
 export interface Movement {
   id: string;
   transactionId: string;
-  accountId: string;
-  type: MovementType;
+  accountId?: string;
+  type?: MovementType;
+  movementType?: MovementType;
   amount: number;
   currency: string;
   balanceAfter: number;

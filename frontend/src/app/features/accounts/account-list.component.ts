@@ -222,13 +222,13 @@ import { Account, AccountType, CurrencyCode, Customer, Movement } from '../../co
                   <td>
                     <span
                       class="badge"
-                      [ngClass]="m.type === 'CREDIT' ? 'badge-credit' : 'badge-debit'"
+                      [ngClass]="(m.movementType || m.type) === 'CREDIT' ? 'badge-credit' : 'badge-debit'"
                     >
-                      {{ m.type }}
+                      {{ (m.movementType || m.type) === 'CREDIT' ? 'CRÉDITO' : 'DÉBITO' }}
                     </span>
                   </td>
-                  <td [style.color]="m.type === 'CREDIT' ? 'var(--success)' : 'var(--danger)'" style="font-weight: 600;">
-                    {{ m.type === 'CREDIT' ? '+' : '-' }} {{ m.amount | currency: m.currency : 'symbol' : '1.2-2' }}
+                  <td [style.color]="(m.movementType || m.type) === 'CREDIT' ? 'var(--success)' : 'var(--danger)'" style="font-weight: 600;">
+                    {{ (m.movementType || m.type) === 'CREDIT' ? '+' : '-' }} {{ m.amount | currency: m.currency : 'symbol' : '1.2-2' }}
                   </td>
                   <td style="font-weight: 600;">
                     {{ m.balanceAfter | currency: m.currency : 'symbol' : '1.2-2' }}

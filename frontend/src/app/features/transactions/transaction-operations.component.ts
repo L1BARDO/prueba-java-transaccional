@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TransactionService } from '../../core/services/transaction.service';
 import { AccountService } from '../../core/services/account.service';
 import { CustomerService } from '../../core/services/customer.service';
@@ -74,14 +75,24 @@ import { Account, CurrencyCode, Customer, Transaction } from '../../core/models/
             <span class="voucher-title">
               <span class="voucher-icon">✓</span> Comprobante de Operación Exitosa
             </span>
-            <button
-              type="button"
-              class="voucher-close"
-              (click)="lastTransaction = null"
-              title="Cerrar comprobante"
-            >
-              ✕
-            </button>
+            <div class="voucher-actions">
+              <button
+                type="button"
+                class="btn-voucher-ticket"
+                (click)="viewTicket(lastTransaction.id)"
+                title="Ver e imprimir ticket bancario"
+              >
+                🧾 Ver / Imprimir Ticket
+              </button>
+              <button
+                type="button"
+                class="voucher-close"
+                (click)="lastTransaction = null"
+                title="Cerrar comprobante"
+              >
+                ✕
+              </button>
+            </div>
           </div>
           <div class="voucher-body">
             <div class="voucher-item">
@@ -653,6 +664,7 @@ import { Account, CurrencyCode, Customer, Transaction } from '../../core/models/
                   <th class="sticky-th">Estado</th>
                   <th class="sticky-th">Fecha</th>
                   <th class="sticky-th">Detalle / Razón</th>
+                  <th class="sticky-th" style="text-align: center; width: 60px;">Ticket</th>
                 </tr>
               </thead>
               <tbody>
@@ -685,16 +697,26 @@ import { Account, CurrencyCode, Customer, Transaction } from '../../core/models/
                       {{ tx.description || 'Procesada con éxito' }}
                     </span>
                   </td>
+                  <td style="text-align: center;">
+                    <button
+                      type="button"
+                      class="btn-table-ticket"
+                      (click)="viewTicket(tx.id)"
+                      title="Ver e imprimir ticket de la operación"
+                    >
+                      🧾
+                    </button>
+                  </td>
                 </tr>
 
                 <tr *ngIf="loadingInitial">
-                  <td [attr.colspan]="authService.isCustomer() ? 8 : 7" style="text-align: center; color: var(--gray-600); padding: 2.5rem;">
+                  <td [attr.colspan]="authService.isCustomer() ? 9 : 8" style="text-align: center; color: var(--gray-600); padding: 2.5rem;">
                     <div class="spinner-line">Cargando transacciones...</div>
                   </td>
                 </tr>
 
                 <tr *ngIf="!loadingInitial && transactions.length === 0">
-                  <td [attr.colspan]="authService.isCustomer() ? 8 : 7" style="text-align: center; color: var(--gray-600); padding: 2.5rem;">
+                  <td [attr.colspan]="authService.isCustomer() ? 9 : 8" style="text-align: center; color: var(--gray-600); padding: 2.5rem;">
                     No se encontraron transacciones registradas.
                   </td>
                 </tr>
@@ -794,6 +816,45 @@ import { Account, CurrencyCode, Customer, Transaction } from '../../core/models/
     }
     .voucher-close:hover {
       background: #dcfce7;
+    }
+    .voucher-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .btn-voucher-ticket {
+      background: white;
+      border: 1px solid #86efac;
+      color: #166534;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 0.25rem 0.65rem;
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.15s ease;
+    }
+    .btn-voucher-ticket:hover {
+      background: #dcfce7;
+      border-color: #22c55e;
+      transform: translateY(-1px);
+    }
+    .btn-table-ticket {
+      background: var(--gray-100);
+      border: 1px solid var(--gray-300);
+      border-radius: 4px;
+      font-size: 0.95rem;
+      padding: 0.2rem 0.5rem;
+      cursor: pointer;
+      line-height: 1;
+      transition: all 0.15s ease;
+    }
+    .btn-table-ticket:hover {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      transform: scale(1.1);
     }
     .voucher-body {
       display: grid;
@@ -1230,11 +1291,18 @@ export class TransactionOperationsComponent implements OnInit {
     private accountService: AccountService,
     private customerService: CustomerService,
     public authService: AuthService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
     this.activeTab = this.resolveInitialTab();
+    this.route.queryParams.subscribe((params) => {
+      if (params['tab']) {
+        this.activeTab = params['tab'];
+      }
+    });
     if (this.authService.hasPermission('CUSTOMER_READ')) {
       this.customerService.getAll(0, 100).subscribe({
         next: (res) => {
@@ -1510,6 +1578,11 @@ export class TransactionOperationsComponent implements OnInit {
   onWithdrawAccountChange(): void {
     const acc = this.activeAccounts.find((a) => a.id === this.withdrawalForm.accountId);
     if (acc) this.selectWithdrawAccount(acc);
+  }
+
+  viewTicket(transactionId?: string): void {
+    if (!transactionId) return;
+    this.router.navigate(['/transactions/ticket', transactionId]);
   }
 
   onTransferSourceChange(): void {

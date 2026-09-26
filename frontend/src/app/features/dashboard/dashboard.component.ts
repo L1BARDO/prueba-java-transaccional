@@ -233,13 +233,13 @@ interface AccountMovementItem extends Movement {
                     <td>
                       <span
                         class="badge"
-                        [ngClass]="m.type === 'CREDIT' ? 'badge-completed' : 'badge-rejected'"
+                        [ngClass]="(m.movementType || m.type) === 'CREDIT' ? 'badge-completed' : 'badge-rejected'"
                       >
-                        {{ m.type === 'CREDIT' ? '📥 Crédito / Depósito' : '📤 Débito / Retiro' }}
+                        {{ (m.movementType || m.type) === 'CREDIT' ? '📥 Crédito / Depósito' : '📤 Débito / Retiro' }}
                       </span>
                     </td>
-                    <td [style.color]="m.type === 'CREDIT' ? 'var(--success)' : 'var(--danger)'" style="font-weight: 700;">
-                      {{ m.type === 'CREDIT' ? '+' : '-' }}{{ m.amount | currency: m.currency : 'symbol' : '1.2-2' }} {{ m.currency }}
+                    <td [style.color]="(m.movementType || m.type) === 'CREDIT' ? 'var(--success)' : 'var(--danger)'" style="font-weight: 700;">
+                      {{ (m.movementType || m.type) === 'CREDIT' ? '+' : '-' }}{{ m.amount | currency: m.currency : 'symbol' : '1.2-2' }} {{ m.currency }}
                     </td>
                     <td><strong>{{ m.balanceAfter | currency: m.currency : 'symbol' : '1.2-2' }}</strong></td>
                   </tr>
@@ -1084,8 +1084,9 @@ export class DashboardComponent implements OnInit {
         results.forEach((res, index) => {
           const accNumber = this.customerAccounts[index]?.accountNumber;
           res.content.forEach((m) => {
-            allMovements.push({ ...m, accountNumber: accNumber });
-            if (m.type === 'CREDIT') {
+            const movType = (m.movementType || m.type) as any;
+            allMovements.push({ ...m, type: movType, movementType: movType, accountNumber: accNumber });
+            if (movType === 'CREDIT') {
               credits += (m.currency === 'USD' ? m.amount * 4000 : m.amount);
             } else {
               debits += (m.currency === 'USD' ? m.amount * 4000 : m.amount);

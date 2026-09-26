@@ -19,13 +19,13 @@ import { AuthService } from '../../core/services/auth.service';
           <!-- Vista para Clientes -->
           <ng-container *ngIf="authService.isCustomer()">
             <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">
-              🏠 Mi Portal
+              Mi Portal
             </a>
             <a routerLink="/accounts" routerLinkActive="active" class="nav-link">
-              💳 Mis Cuentas
+              Mis Cuentas
             </a>
             <a routerLink="/transactions" routerLinkActive="active" class="nav-link">
-              🔄 Transferencias
+              Transferencias
             </a>
           </ng-container>
 
