@@ -19,11 +19,19 @@ public record AccountResponse(
         @Schema(example = "150000.00") BigDecimal balance,
         AccountStatus status,
         Instant createdAt,
-        Instant updatedAt) {
+        Instant updatedAt,
+        @Schema(example = "Ana María Pérez") String customerName,
+        @Schema(example = "1020304050") String customerDocumentNumber) {
 
     public static AccountResponse from(Account a) {
         return new AccountResponse(a.getId(), a.getAccountNumber(), a.getCustomerId(), a.getType(),
                 a.getCurrency().getCurrencyCode(), a.getBalance().amount(), a.getStatus(), a.getCreatedAt(),
-                a.getUpdatedAt());
+                a.getUpdatedAt(), null, null);
+    }
+
+    public static AccountResponse from(Account a, String customerName, String customerDocumentNumber) {
+        return new AccountResponse(a.getId(), a.getAccountNumber(), a.getCustomerId(), a.getType(),
+                a.getCurrency().getCurrencyCode(), a.getBalance().amount(), a.getStatus(), a.getCreatedAt(),
+                a.getUpdatedAt(), customerName, customerDocumentNumber);
     }
 }

@@ -64,6 +64,9 @@ class AccountControllerTest {
     @MockitoBean
     private AccountQueryUseCase queries;
 
+    @MockitoBean
+    private com.switchtx.infrastructure.adapter.out.persistence.repository.CustomerJpaRepository customerJpaRepository;
+
     private final Instant now = Instant.parse("2026-09-26T12:00:00Z");
     private final java.util.Currency usd = java.util.Currency.getInstance("USD");
 

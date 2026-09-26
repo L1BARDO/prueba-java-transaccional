@@ -3,9 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TransactionService } from '../../core/services/transaction.service';
 import { AccountService } from '../../core/services/account.service';
+import { CustomerService } from '../../core/services/customer.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
-import { Account, CurrencyCode, Transaction } from '../../core/models/models';
+import { Account, CurrencyCode, Customer, Transaction } from '../../core/models/models';
 
 @Component({
   selector: 'app-transaction-operations',
@@ -110,19 +111,93 @@ import { Account, CurrencyCode, Transaction } from '../../core/models/models';
         <div *ngIf="activeTab === 'DEPOSIT' && authService.hasPermission('TRANSACTION_DEPOSIT')" class="tab-content">
           <form (ngSubmit)="submitDeposit()">
             <div class="form-group">
-              <label class="form-label">Cuenta Destino</label>
-              <select
-                class="form-control"
-                [(ngModel)]="depositForm.accountId"
-                name="depAccount"
-                required
-                (change)="onDepositAccountChange()"
-              >
-                <option value="" disabled>Seleccione cuenta destino</option>
-                <option *ngFor="let a of activeAccounts" [value]="a.id">
-                  Cuenta {{ a.accountNumber }} - Saldo: {{ a.balance | currency: a.currency }} ({{ a.currency }})
-                </option>
-              </select>
+              <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Cuenta Destino</span>
+                <small style="color: var(--gray-600); font-weight: normal;">Buscar por nombre de titular, cédula o número de cuenta</small>
+              </label>
+
+              <div class="searchable-select-container">
+                <div class="dropdown-backdrop" *ngIf="depositDropdownOpen" (click)="depositDropdownOpen = false"></div>
+
+                <div class="search-input-wrapper">
+                  <span class="search-icon">🔍</span>
+                  <input
+                    type="text"
+                    class="form-control search-input"
+                    placeholder="Escriba nombre, cédula o cuenta para filtrar..."
+                    [(ngModel)]="depositSearch"
+                    (focus)="depositDropdownOpen = true"
+                    name="depSearch"
+                    autocomplete="off"
+                  />
+                  <button
+                    *ngIf="depositSearch || selectedDepositAccount"
+                    type="button"
+                    class="btn-clear-search"
+                    (click)="clearDepositSearch()"
+                    title="Limpiar / Cambiar"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <!-- Tarjeta de cuenta seleccionada -->
+                <div *ngIf="selectedDepositAccount" class="selected-account-card">
+                  <div class="card-left">
+                    <div class="card-acc-row">
+                      <span class="acc-title">Cuenta {{ selectedDepositAccount.accountNumber }}</span>
+                      <span class="badge-type">{{ selectedDepositAccount.type === 'SAVINGS' ? 'Ahorros' : 'Corriente' }}</span>
+                      <span class="badge-currency">{{ selectedDepositAccount.currency }}</span>
+                    </div>
+                    <div class="card-client-row" *ngIf="selectedDepositAccount.customerName || getCustomerName(selectedDepositAccount.customerId)">
+                      <span class="client-name">👤 {{ selectedDepositAccount.customerName || getCustomerName(selectedDepositAccount.customerId) }}</span>
+                      <span class="client-doc" *ngIf="selectedDepositAccount.customerDocumentNumber || getCustomerDoc(selectedDepositAccount.customerId)">
+                        · Doc: {{ selectedDepositAccount.customerDocumentNumber || getCustomerDoc(selectedDepositAccount.customerId) }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="card-right">
+                    <span class="balance-lbl">Saldo actual</span>
+                    <span class="balance-val">{{ selectedDepositAccount.balance | currency: selectedDepositAccount.currency : 'symbol' : '1.2-2' }}</span>
+                  </div>
+                </div>
+
+                <!-- Menú desplegable -->
+                <div class="search-dropdown-menu" *ngIf="depositDropdownOpen">
+                  <div class="dropdown-header">
+                    <span>Cuentas disponibles ({{ getFilteredDepositAccounts().length }})</span>
+                    <button type="button" class="btn-close-dropdown" (click)="depositDropdownOpen = false">Cerrar ✕</button>
+                  </div>
+                  <div class="dropdown-list">
+                    <div
+                      *ngFor="let a of getFilteredDepositAccounts()"
+                      class="dropdown-item"
+                      [class.selected]="selectedDepositAccount?.id === a.id"
+                      (click)="selectDepositAccount(a)"
+                    >
+                      <div class="item-left">
+                        <div class="item-acc">
+                          <strong>Cuenta {{ a.accountNumber }}</strong>
+                          <span class="item-badge">{{ a.type === 'SAVINGS' ? 'Ahorros' : 'Corriente' }}</span>
+                          <span class="item-currency">{{ a.currency }}</span>
+                        </div>
+                        <div class="item-customer" *ngIf="a.customerName || getCustomerName(a.customerId)">
+                          <span>👤 {{ a.customerName || getCustomerName(a.customerId) }}</span>
+                          <span class="item-doc" *ngIf="a.customerDocumentNumber || getCustomerDoc(a.customerId)">
+                            · Doc: {{ a.customerDocumentNumber || getCustomerDoc(a.customerId) }}
+                          </span>
+                        </div>
+                      </div>
+                      <div class="item-right">
+                        <span class="item-balance">{{ a.balance | currency: a.currency : 'symbol' : '1.2-2' }}</span>
+                      </div>
+                    </div>
+                    <div *ngIf="getFilteredDepositAccounts().length === 0" class="dropdown-empty">
+                      No se encontraron cuentas con "{{ depositSearch }}".
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="form-row">
@@ -174,19 +249,93 @@ import { Account, CurrencyCode, Transaction } from '../../core/models/models';
         <div *ngIf="activeTab === 'WITHDRAWAL' && authService.hasPermission('TRANSACTION_WITHDRAW')" class="tab-content">
           <form (ngSubmit)="submitWithdrawal()">
             <div class="form-group">
-              <label class="form-label">Cuenta Origen</label>
-              <select
-                class="form-control"
-                [(ngModel)]="withdrawalForm.accountId"
-                name="wAccount"
-                required
-                (change)="onWithdrawAccountChange()"
-              >
-                <option value="" disabled>Seleccione cuenta origen</option>
-                <option *ngFor="let a of activeAccounts" [value]="a.id">
-                  Cuenta {{ a.accountNumber }} - Saldo Disponible: {{ a.balance | currency: a.currency }} ({{ a.currency }})
-                </option>
-              </select>
+              <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Cuenta Origen para Retiro</span>
+                <small style="color: var(--gray-600); font-weight: normal;">Buscar por nombre de titular, cédula o número de cuenta</small>
+              </label>
+
+              <div class="searchable-select-container">
+                <div class="dropdown-backdrop" *ngIf="withdrawDropdownOpen" (click)="withdrawDropdownOpen = false"></div>
+
+                <div class="search-input-wrapper">
+                  <span class="search-icon">🔍</span>
+                  <input
+                    type="text"
+                    class="form-control search-input"
+                    placeholder="Escriba nombre, cédula o cuenta para filtrar..."
+                    [(ngModel)]="withdrawSearch"
+                    (focus)="withdrawDropdownOpen = true"
+                    name="wSearch"
+                    autocomplete="off"
+                  />
+                  <button
+                    *ngIf="withdrawSearch || selectedWithdrawAccount"
+                    type="button"
+                    class="btn-clear-search"
+                    (click)="clearWithdrawSearch()"
+                    title="Limpiar / Cambiar"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <!-- Tarjeta de cuenta seleccionada -->
+                <div *ngIf="selectedWithdrawAccount" class="selected-account-card">
+                  <div class="card-left">
+                    <div class="card-acc-row">
+                      <span class="acc-title">Cuenta {{ selectedWithdrawAccount.accountNumber }}</span>
+                      <span class="badge-type">{{ selectedWithdrawAccount.type === 'SAVINGS' ? 'Ahorros' : 'Corriente' }}</span>
+                      <span class="badge-currency">{{ selectedWithdrawAccount.currency }}</span>
+                    </div>
+                    <div class="card-client-row" *ngIf="selectedWithdrawAccount.customerName || getCustomerName(selectedWithdrawAccount.customerId)">
+                      <span class="client-name">👤 {{ selectedWithdrawAccount.customerName || getCustomerName(selectedWithdrawAccount.customerId) }}</span>
+                      <span class="client-doc" *ngIf="selectedWithdrawAccount.customerDocumentNumber || getCustomerDoc(selectedWithdrawAccount.customerId)">
+                        · Doc: {{ selectedWithdrawAccount.customerDocumentNumber || getCustomerDoc(selectedWithdrawAccount.customerId) }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="card-right">
+                    <span class="balance-lbl">Saldo disponible</span>
+                    <span class="balance-val">{{ selectedWithdrawAccount.balance | currency: selectedWithdrawAccount.currency : 'symbol' : '1.2-2' }}</span>
+                  </div>
+                </div>
+
+                <!-- Menú desplegable -->
+                <div class="search-dropdown-menu" *ngIf="withdrawDropdownOpen">
+                  <div class="dropdown-header">
+                    <span>Cuentas disponibles ({{ getFilteredWithdrawAccounts().length }})</span>
+                    <button type="button" class="btn-close-dropdown" (click)="withdrawDropdownOpen = false">Cerrar ✕</button>
+                  </div>
+                  <div class="dropdown-list">
+                    <div
+                      *ngFor="let a of getFilteredWithdrawAccounts()"
+                      class="dropdown-item"
+                      [class.selected]="selectedWithdrawAccount?.id === a.id"
+                      (click)="selectWithdrawAccount(a)"
+                    >
+                      <div class="item-left">
+                        <div class="item-acc">
+                          <strong>Cuenta {{ a.accountNumber }}</strong>
+                          <span class="item-badge">{{ a.type === 'SAVINGS' ? 'Ahorros' : 'Corriente' }}</span>
+                          <span class="item-currency">{{ a.currency }}</span>
+                        </div>
+                        <div class="item-customer" *ngIf="a.customerName || getCustomerName(a.customerId)">
+                          <span>👤 {{ a.customerName || getCustomerName(a.customerId) }}</span>
+                          <span class="item-doc" *ngIf="a.customerDocumentNumber || getCustomerDoc(a.customerId)">
+                            · Doc: {{ a.customerDocumentNumber || getCustomerDoc(a.customerId) }}
+                          </span>
+                        </div>
+                      </div>
+                      <div class="item-right">
+                        <span class="item-balance">{{ a.balance | currency: a.currency : 'symbol' : '1.2-2' }}</span>
+                      </div>
+                    </div>
+                    <div *ngIf="getFilteredWithdrawAccounts().length === 0" class="dropdown-empty">
+                      No se encontraron cuentas con "{{ withdrawSearch }}".
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="form-row">
@@ -238,38 +387,185 @@ import { Account, CurrencyCode, Transaction } from '../../core/models/models';
         <div *ngIf="activeTab === 'TRANSFER' && authService.hasPermission('TRANSACTION_TRANSFER')" class="tab-content">
           <form (ngSubmit)="submitTransfer()">
             <div class="form-row">
+              <!-- Cuenta Origen (Débito) -->
               <div class="form-group">
-                <label class="form-label">Cuenta Origen (Débito)</label>
-                <select
-                  class="form-control"
-                  [(ngModel)]="transferForm.sourceAccountId"
-                  name="trSource"
-                  required
-                  (change)="onTransferSourceChange()"
-                >
-                  <option value="" disabled>Seleccione cuenta origen</option>
-                  <option *ngFor="let a of myActiveAccounts" [value]="a.id">
-                    Cuenta {{ a.accountNumber }} ({{ a.currency }}) - Saldo: {{ a.balance | currency: a.currency }}
-                  </option>
-                </select>
+                <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+                  <span>Cuenta Origen (Débito)</span>
+                  <small style="color: var(--gray-600); font-weight: normal;">Buscar por titular, cédula o cuenta</small>
+                </label>
+
+                <div class="searchable-select-container">
+                  <div class="dropdown-backdrop" *ngIf="transferSourceDropdownOpen" (click)="transferSourceDropdownOpen = false"></div>
+
+                  <div class="search-input-wrapper">
+                    <span class="search-icon">🔍</span>
+                    <input
+                      type="text"
+                      class="form-control search-input"
+                      placeholder="Buscar cuenta origen por nombre, cédula o cuenta..."
+                      [(ngModel)]="transferSourceSearch"
+                      (focus)="transferSourceDropdownOpen = true"
+                      name="trSourceSearch"
+                      autocomplete="off"
+                    />
+                    <button
+                      *ngIf="transferSourceSearch || selectedTransferSourceAccount"
+                      type="button"
+                      class="btn-clear-search"
+                      (click)="clearTransferSourceSearch()"
+                      title="Limpiar / Cambiar"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <!-- Tarjeta visual cuenta origen -->
+                  <div *ngIf="selectedTransferSourceAccount" class="selected-account-card">
+                    <div class="card-left">
+                      <div class="card-acc-row">
+                        <span class="acc-title">Cuenta {{ selectedTransferSourceAccount.accountNumber }}</span>
+                        <span class="badge-type">{{ selectedTransferSourceAccount.type === 'SAVINGS' ? 'Ahorros' : 'Corriente' }}</span>
+                        <span class="badge-currency">{{ selectedTransferSourceAccount.currency }}</span>
+                      </div>
+                      <div class="card-client-row" *ngIf="selectedTransferSourceAccount.customerName || getCustomerName(selectedTransferSourceAccount.customerId)">
+                        <span class="client-name">👤 {{ selectedTransferSourceAccount.customerName || getCustomerName(selectedTransferSourceAccount.customerId) }}</span>
+                        <span class="client-doc" *ngIf="selectedTransferSourceAccount.customerDocumentNumber || getCustomerDoc(selectedTransferSourceAccount.customerId)">
+                          · Doc: {{ selectedTransferSourceAccount.customerDocumentNumber || getCustomerDoc(selectedTransferSourceAccount.customerId) }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="card-right">
+                      <span class="balance-lbl">Saldo disponible</span>
+                      <span class="balance-val">{{ selectedTransferSourceAccount.balance | currency: selectedTransferSourceAccount.currency : 'symbol' : '1.2-2' }}</span>
+                    </div>
+                  </div>
+
+                  <!-- Menú desplegable cuenta origen -->
+                  <div class="search-dropdown-menu" *ngIf="transferSourceDropdownOpen">
+                    <div class="dropdown-header">
+                      <span>Cuentas de origen ({{ getFilteredTransferSourceAccounts().length }})</span>
+                      <button type="button" class="btn-close-dropdown" (click)="transferSourceDropdownOpen = false">Cerrar ✕</button>
+                    </div>
+                    <div class="dropdown-list">
+                      <div
+                        *ngFor="let a of getFilteredTransferSourceAccounts()"
+                        class="dropdown-item"
+                        [class.selected]="selectedTransferSourceAccount?.id === a.id"
+                        (click)="selectTransferSourceAccount(a)"
+                      >
+                        <div class="item-left">
+                          <div class="item-acc">
+                            <strong>Cuenta {{ a.accountNumber }}</strong>
+                            <span class="item-badge">{{ a.type === 'SAVINGS' ? 'Ahorros' : 'Corriente' }}</span>
+                            <span class="item-currency">{{ a.currency }}</span>
+                          </div>
+                          <div class="item-customer" *ngIf="a.customerName || getCustomerName(a.customerId)">
+                            <span>👤 {{ a.customerName || getCustomerName(a.customerId) }}</span>
+                            <span class="item-doc" *ngIf="a.customerDocumentNumber || getCustomerDoc(a.customerId)">
+                              · Doc: {{ a.customerDocumentNumber || getCustomerDoc(a.customerId) }}
+                            </span>
+                          </div>
+                        </div>
+                        <div class="item-right">
+                          <span class="item-balance">{{ a.balance | currency: a.currency : 'symbol' : '1.2-2' }}</span>
+                        </div>
+                      </div>
+                      <div *ngIf="getFilteredTransferSourceAccounts().length === 0" class="dropdown-empty">
+                        No se encontraron cuentas con "{{ transferSourceSearch }}".
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
+              <!-- Cuenta Destino (Crédito) -->
               <div class="form-group">
-                <label class="form-label">Cuenta Destino (Crédito)</label>
-                <select
-                  class="form-control"
-                  [(ngModel)]="transferForm.destinationAccountId"
-                  name="trDest"
-                  required
-                >
-                  <option value="" disabled>Seleccione cuenta destino</option>
-                  <option
-                    *ngFor="let a of getEligibleDestinationAccounts()"
-                    [value]="a.id"
-                  >
-                    Cuenta {{ a.accountNumber }} ({{ a.currency }}) - {{ a.type === 'SAVINGS' ? 'Ahorros' : 'Corriente' }}
-                  </option>
-                </select>
+                <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+                  <span>Cuenta Destino (Crédito)</span>
+                  <small style="color: var(--gray-600); font-weight: normal;">Buscar destinatario por nombre o cédula</small>
+                </label>
+
+                <div class="searchable-select-container">
+                  <div class="dropdown-backdrop" *ngIf="transferDestDropdownOpen" (click)="transferDestDropdownOpen = false"></div>
+
+                  <div class="search-input-wrapper">
+                    <span class="search-icon">🔍</span>
+                    <input
+                      type="text"
+                      class="form-control search-input"
+                      placeholder="Buscar destinatario por nombre, cédula o cuenta..."
+                      [(ngModel)]="transferDestSearch"
+                      (focus)="transferDestDropdownOpen = true"
+                      name="trDestSearch"
+                      autocomplete="off"
+                    />
+                    <button
+                      *ngIf="transferDestSearch || selectedTransferDestAccount"
+                      type="button"
+                      class="btn-clear-search"
+                      (click)="clearTransferDestSearch()"
+                      title="Limpiar / Cambiar"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <!-- Tarjeta visual cuenta destino -->
+                  <div *ngIf="selectedTransferDestAccount" class="selected-account-card">
+                    <div class="card-left">
+                      <div class="card-acc-row">
+                        <span class="acc-title">Cuenta {{ selectedTransferDestAccount.accountNumber }}</span>
+                        <span class="badge-type">{{ selectedTransferDestAccount.type === 'SAVINGS' ? 'Ahorros' : 'Corriente' }}</span>
+                        <span class="badge-currency">{{ selectedTransferDestAccount.currency }}</span>
+                      </div>
+                      <div class="card-client-row" *ngIf="selectedTransferDestAccount.customerName || getCustomerName(selectedTransferDestAccount.customerId)">
+                        <span class="client-name">👤 {{ selectedTransferDestAccount.customerName || getCustomerName(selectedTransferDestAccount.customerId) }}</span>
+                        <span class="client-doc" *ngIf="selectedTransferDestAccount.customerDocumentNumber || getCustomerDoc(selectedTransferDestAccount.customerId)">
+                          · Doc: {{ selectedTransferDestAccount.customerDocumentNumber || getCustomerDoc(selectedTransferDestAccount.customerId) }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="card-right">
+                      <span class="badge badge-active">Lista para recibir</span>
+                    </div>
+                  </div>
+
+                  <!-- Menú desplegable cuenta destino -->
+                  <div class="search-dropdown-menu" *ngIf="transferDestDropdownOpen">
+                    <div class="dropdown-header">
+                      <span>Cuentas elegibles ({{ getFilteredTransferDestAccounts().length }})</span>
+                      <button type="button" class="btn-close-dropdown" (click)="transferDestDropdownOpen = false">Cerrar ✕</button>
+                    </div>
+                    <div class="dropdown-list">
+                      <div
+                        *ngFor="let a of getFilteredTransferDestAccounts()"
+                        class="dropdown-item"
+                        [class.selected]="selectedTransferDestAccount?.id === a.id"
+                        (click)="selectTransferDestAccount(a)"
+                      >
+                        <div class="item-left">
+                          <div class="item-acc">
+                            <strong>Cuenta {{ a.accountNumber }}</strong>
+                            <span class="item-badge">{{ a.type === 'SAVINGS' ? 'Ahorros' : 'Corriente' }}</span>
+                            <span class="item-currency">{{ a.currency }}</span>
+                          </div>
+                          <div class="item-customer" *ngIf="a.customerName || getCustomerName(a.customerId)">
+                            <span>👤 {{ a.customerName || getCustomerName(a.customerId) }}</span>
+                            <span class="item-doc" *ngIf="a.customerDocumentNumber || getCustomerDoc(a.customerId)">
+                              · Doc: {{ a.customerDocumentNumber || getCustomerDoc(a.customerId) }}
+                            </span>
+                          </div>
+                        </div>
+                        <div class="item-right">
+                          <span class="item-badge" style="background: #ecfdf5; color: #047857;">Misma Moneda ({{ a.currency }})</span>
+                        </div>
+                      </div>
+                      <div *ngIf="getFilteredTransferDestAccounts().length === 0" class="dropdown-empty">
+                        No se encontraron cuentas destino con "{{ transferDestSearch }}".
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -615,6 +911,247 @@ import { Account, CurrencyCode, Transaction } from '../../core/models/models';
       font-weight: 500;
     }
 
+    /* Searchable Select & Cards */
+    .searchable-select-container {
+      position: relative;
+      margin-bottom: 0.5rem;
+    }
+    .dropdown-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 40;
+    }
+    .search-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .search-icon {
+      position: absolute;
+      left: 0.75rem;
+      font-size: 0.85rem;
+      pointer-events: none;
+      color: var(--gray-600);
+    }
+    .search-input {
+      padding-left: 2.25rem !important;
+      padding-right: 2rem !important;
+      border-radius: var(--radius);
+      border: 1px solid var(--gray-300);
+      font-size: 0.875rem;
+      width: 100%;
+    }
+    .search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+      outline: none;
+    }
+    .btn-clear-search {
+      position: absolute;
+      right: 0.6rem;
+      background: none;
+      border: none;
+      color: var(--gray-600);
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+    }
+    .btn-clear-search:hover {
+      background: var(--gray-200);
+      color: var(--gray-800);
+    }
+
+    /* Selected account summary card */
+    .selected-account-card {
+      margin-top: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-left: 4px solid var(--primary);
+      border-radius: var(--radius);
+      padding: 0.65rem 0.85rem;
+      gap: 0.75rem;
+    }
+    .card-left {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .card-acc-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .acc-title {
+      font-weight: 700;
+      color: #0f172a;
+      font-size: 0.9rem;
+    }
+    .badge-type {
+      background: #e2e8f0;
+      color: #334155;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+    }
+    .badge-currency {
+      background: #dbeafe;
+      color: #1e40af;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+    }
+    .card-client-row {
+      font-size: 0.8rem;
+      color: #475569;
+      display: flex;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+    }
+    .client-name {
+      font-weight: 600;
+      color: #1e293b;
+    }
+    .client-doc {
+      color: #64748b;
+    }
+    .card-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      min-width: 100px;
+    }
+    .balance-lbl {
+      font-size: 0.7rem;
+      color: #64748b;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .balance-val {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #059669;
+    }
+
+    /* Dropdown menu */
+    .search-dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      background: white;
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+      margin-top: 4px;
+      overflow: hidden;
+      animation: fadeIn 0.15s ease-in-out;
+    }
+    .dropdown-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.4rem 0.75rem;
+      background: var(--gray-100);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--gray-600);
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .btn-close-dropdown {
+      background: none;
+      border: none;
+      font-size: 0.75rem;
+      color: var(--gray-600);
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn-close-dropdown:hover {
+      color: var(--danger);
+    }
+    .dropdown-list {
+      max-height: 240px;
+      overflow-y: auto;
+    }
+    .dropdown-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid var(--gray-100);
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .dropdown-item:hover {
+      background: #eff6ff;
+    }
+    .dropdown-item.selected {
+      background: #e0f2fe;
+      border-left: 3px solid var(--primary);
+    }
+    .dropdown-item:last-child {
+      border-bottom: none;
+    }
+    .item-left {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+    .item-acc {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+    }
+    .item-badge {
+      background: var(--gray-200);
+      color: var(--gray-700);
+      font-size: 0.65rem;
+      padding: 0.1rem 0.35rem;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+    .item-currency {
+      background: #dbeafe;
+      color: #1e40af;
+      font-size: 0.65rem;
+      padding: 0.1rem 0.35rem;
+      border-radius: 3px;
+      font-weight: 700;
+    }
+    .item-customer {
+      font-size: 0.75rem;
+      color: var(--gray-600);
+    }
+    .item-doc {
+      color: var(--gray-500);
+    }
+    .item-right {
+      text-align: right;
+    }
+    .item-balance {
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: #059669;
+    }
+    .dropdown-empty {
+      padding: 1.25rem;
+      text-align: center;
+      color: var(--gray-500);
+      font-size: 0.85rem;
+      font-style: italic;
+    }
+
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(4px); }
       to { opacity: 1; transform: translateY(0); }
@@ -643,6 +1180,29 @@ export class TransactionOperationsComponent implements OnInit {
   submitting = false;
   lastTransaction: Transaction | null = null;
 
+  // Customer resolution cache
+  customersMap = new Map<string, Customer>();
+
+  // Search & Selection State for Depósito
+  depositSearch = '';
+  depositDropdownOpen = false;
+  selectedDepositAccount: Account | null = null;
+
+  // Search & Selection State for Retiro
+  withdrawSearch = '';
+  withdrawDropdownOpen = false;
+  selectedWithdrawAccount: Account | null = null;
+
+  // Search & Selection State for Transferencia - Origen
+  transferSourceSearch = '';
+  transferSourceDropdownOpen = false;
+  selectedTransferSourceAccount: Account | null = null;
+
+  // Search & Selection State for Transferencia - Destino
+  transferDestSearch = '';
+  transferDestDropdownOpen = false;
+  selectedTransferDestAccount: Account | null = null;
+
   depositForm = {
     accountId: '',
     amount: 100000,
@@ -668,12 +1228,21 @@ export class TransactionOperationsComponent implements OnInit {
   constructor(
     private transactionService: TransactionService,
     private accountService: AccountService,
+    private customerService: CustomerService,
     public authService: AuthService,
     private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
     this.activeTab = this.resolveInitialTab();
+    if (this.authService.hasPermission('CUSTOMER_READ')) {
+      this.customerService.getAll(0, 100).subscribe({
+        next: (res) => {
+          res.content.forEach((c) => this.customersMap.set(c.id, c));
+        },
+        error: () => {}
+      });
+    }
     this.loadAccounts();
     this.loadTransactions(true);
   }
@@ -732,22 +1301,40 @@ export class TransactionOperationsComponent implements OnInit {
           this.activeAccounts = this.myActiveAccounts;
         }
 
+        if (this.activeAccounts.length > 0) {
+          if (!this.selectedDepositAccount || !this.activeAccounts.some((a) => a.id === this.selectedDepositAccount?.id)) {
+            this.selectDepositAccount(this.activeAccounts[0]);
+          } else {
+            const updated = this.activeAccounts.find((a) => a.id === this.selectedDepositAccount?.id);
+            if (updated) this.selectedDepositAccount = updated;
+          }
+
+          if (!this.selectedWithdrawAccount || !this.activeAccounts.some((a) => a.id === this.selectedWithdrawAccount?.id)) {
+            this.selectWithdrawAccount(this.activeAccounts[0]);
+          } else {
+            const updated = this.activeAccounts.find((a) => a.id === this.selectedWithdrawAccount?.id);
+            if (updated) this.selectedWithdrawAccount = updated;
+          }
+        }
+
         if (this.myActiveAccounts.length > 0) {
-          if (!this.depositForm.accountId) {
-            this.depositForm.accountId = this.myActiveAccounts[0].id;
-            this.depositForm.currency = this.myActiveAccounts[0].currency;
+          if (!this.selectedTransferSourceAccount || !this.myActiveAccounts.some((a) => a.id === this.selectedTransferSourceAccount?.id)) {
+            this.selectTransferSourceAccount(this.myActiveAccounts[0]);
+          } else {
+            const updated = this.myActiveAccounts.find((a) => a.id === this.selectedTransferSourceAccount?.id);
+            if (updated) this.selectedTransferSourceAccount = updated;
           }
-          if (!this.withdrawalForm.accountId) {
-            this.withdrawalForm.accountId = this.myActiveAccounts[0].id;
-            this.withdrawalForm.currency = this.myActiveAccounts[0].currency;
-          }
-          if (!this.transferForm.sourceAccountId) {
-            this.transferForm.sourceAccountId = this.myActiveAccounts[0].id;
-            this.transferForm.currency = this.myActiveAccounts[0].currency;
-          }
-          const destination = this.getEligibleDestinationAccounts()[0];
-          if (destination) {
-            this.transferForm.destinationAccountId = destination.id;
+
+          const eligible = this.getEligibleDestinationAccounts();
+          if (eligible.length > 0) {
+            if (!this.selectedTransferDestAccount || !eligible.some((a) => a.id === this.selectedTransferDestAccount?.id)) {
+              this.selectTransferDestAccount(eligible[0]);
+            } else {
+              const updated = eligible.find((a) => a.id === this.selectedTransferDestAccount?.id);
+              if (updated) this.selectedTransferDestAccount = updated;
+            }
+          } else {
+            this.selectTransferDestAccount(null);
           }
         }
       },
@@ -826,25 +1413,108 @@ export class TransactionOperationsComponent implements OnInit {
     this.loadTransactions(false);
   }
 
+  getCustomerName(customerId: string): string {
+    return this.customersMap.get(customerId)?.fullName || '';
+  }
+
+  getCustomerDoc(customerId: string): string {
+    return this.customersMap.get(customerId)?.documentNumber || '';
+  }
+
+  private matchesFilter(acc: Account, term: string): boolean {
+    if (!term || !term.trim()) return true;
+    const q = term.trim().toLowerCase();
+    const accNum = (acc.accountNumber || '').toLowerCase();
+    const custName = (acc.customerName || this.getCustomerName(acc.customerId) || '').toLowerCase();
+    const custDoc = (acc.customerDocumentNumber || this.getCustomerDoc(acc.customerId) || '').toLowerCase();
+    return accNum.includes(q) || custName.includes(q) || custDoc.includes(q);
+  }
+
+  getFilteredDepositAccounts(): Account[] {
+    return this.activeAccounts.filter((a) => this.matchesFilter(a, this.depositSearch));
+  }
+
+  selectDepositAccount(acc: Account): void {
+    this.selectedDepositAccount = acc;
+    this.depositForm.accountId = acc.id;
+    this.depositForm.currency = acc.currency;
+    this.depositDropdownOpen = false;
+    this.depositSearch = '';
+  }
+
+  clearDepositSearch(): void {
+    this.depositSearch = '';
+    this.depositDropdownOpen = true;
+  }
+
+  getFilteredWithdrawAccounts(): Account[] {
+    return this.activeAccounts.filter((a) => this.matchesFilter(a, this.withdrawSearch));
+  }
+
+  selectWithdrawAccount(acc: Account): void {
+    this.selectedWithdrawAccount = acc;
+    this.withdrawalForm.accountId = acc.id;
+    this.withdrawalForm.currency = acc.currency;
+    this.withdrawDropdownOpen = false;
+    this.withdrawSearch = '';
+  }
+
+  clearWithdrawSearch(): void {
+    this.withdrawSearch = '';
+    this.withdrawDropdownOpen = true;
+  }
+
+  getFilteredTransferSourceAccounts(): Account[] {
+    return this.myActiveAccounts.filter((a) => this.matchesFilter(a, this.transferSourceSearch));
+  }
+
+  selectTransferSourceAccount(acc: Account): void {
+    this.selectedTransferSourceAccount = acc;
+    this.transferForm.sourceAccountId = acc.id;
+    this.transferForm.currency = acc.currency;
+    this.transferSourceDropdownOpen = false;
+    this.transferSourceSearch = '';
+
+    const eligible = this.getEligibleDestinationAccounts();
+    if (!this.selectedTransferDestAccount || this.selectedTransferDestAccount.id === acc.id || this.selectedTransferDestAccount.currency !== acc.currency) {
+      this.selectTransferDestAccount(eligible[0] || null);
+    }
+  }
+
+  clearTransferSourceSearch(): void {
+    this.transferSourceSearch = '';
+    this.transferSourceDropdownOpen = true;
+  }
+
+  getFilteredTransferDestAccounts(): Account[] {
+    return this.getEligibleDestinationAccounts().filter((a) => this.matchesFilter(a, this.transferDestSearch));
+  }
+
+  selectTransferDestAccount(acc: Account | null): void {
+    this.selectedTransferDestAccount = acc;
+    this.transferForm.destinationAccountId = acc ? acc.id : '';
+    this.transferDestDropdownOpen = false;
+    this.transferDestSearch = '';
+  }
+
+  clearTransferDestSearch(): void {
+    this.transferDestSearch = '';
+    this.transferDestDropdownOpen = true;
+  }
+
   onDepositAccountChange(): void {
     const acc = this.activeAccounts.find((a) => a.id === this.depositForm.accountId);
-    if (acc) this.depositForm.currency = acc.currency;
+    if (acc) this.selectDepositAccount(acc);
   }
 
   onWithdrawAccountChange(): void {
     const acc = this.activeAccounts.find((a) => a.id === this.withdrawalForm.accountId);
-    if (acc) this.withdrawalForm.currency = acc.currency;
+    if (acc) this.selectWithdrawAccount(acc);
   }
 
   onTransferSourceChange(): void {
     const src = this.myActiveAccounts.find((a) => a.id === this.transferForm.sourceAccountId);
-    if (src) {
-      this.transferForm.currency = src.currency;
-      const eligible = this.getEligibleDestinationAccounts();
-      if (!eligible.some((a) => a.id === this.transferForm.destinationAccountId)) {
-        this.transferForm.destinationAccountId = eligible[0]?.id || '';
-      }
-    }
+    if (src) this.selectTransferSourceAccount(src);
   }
 
   getEligibleDestinationAccounts(): Account[] {

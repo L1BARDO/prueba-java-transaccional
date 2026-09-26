@@ -370,9 +370,22 @@ export class CustomerListComponent implements OnInit {
   }
 
   submitCreate(): void {
+    if (!this.newCustomer.documentNumber || !this.newCustomer.fullName || !this.newCustomer.email) {
+      this.toastService.warning('Por favor complete los campos obligatorios.', 'Validación');
+      return;
+    }
+
     this.saving = true;
 
-    this.customerService.create(this.newCustomer).subscribe({
+    const payload: RegisterCustomerRequest = {
+      documentType: this.newCustomer.documentType,
+      documentNumber: this.newCustomer.documentNumber.trim(),
+      fullName: this.newCustomer.fullName.trim(),
+      email: this.newCustomer.email.trim(),
+      phone: this.newCustomer.phone?.trim() ? this.newCustomer.phone.trim().replace(/[\s\-]/g, '') : undefined
+    };
+
+    this.customerService.create(payload).subscribe({
       next: (created) => {
         this.saving = false;
         this.showModal = false;
@@ -421,7 +434,7 @@ export class CustomerListComponent implements OnInit {
     const payload: UpdateCustomerRequest = {
       fullName: this.editForm.fullName.trim(),
       email: this.editForm.email.trim(),
-      phone: this.editForm.phone ? this.editForm.phone.trim() : undefined,
+      phone: this.editForm.phone?.trim() ? this.editForm.phone.trim().replace(/[\s\-]/g, '') : undefined,
       password: this.editForm.password && this.editForm.password.trim().length > 0 ? this.editForm.password.trim() : undefined
     };
 

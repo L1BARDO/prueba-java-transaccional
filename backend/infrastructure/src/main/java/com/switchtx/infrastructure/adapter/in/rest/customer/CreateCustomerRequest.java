@@ -24,6 +24,6 @@ public record CreateCustomerRequest(
         @NotBlank @Email @Size(max = 150) String email,
 
         @Schema(description = "Teléfono (opcional)", example = "+573001234567")
-        @Pattern(regexp = "^\\+?[0-9]{7,15}$", message = "debe tener entre 7 y 15 dígitos, opcionalmente con '+'")
+        @Pattern(regexp = "^(\\+?[0-9\\s\\-]{7,20})?$", message = "debe tener entre 7 y 15 dígitos, opcionalmente con '+'")
         String phone) {
 }

@@ -40,7 +40,7 @@ public class CustomerController implements CustomerApi {
     @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('CUSTOMER_CREATE')")
     public ResponseEntity<CustomerResponse> create(CreateCustomerRequest request) {
         Customer customer = commands.register(new RegisterCustomerCommand(request.documentType(),
-                request.documentNumber(), request.fullName(), request.email(), request.phone()));
+                request.documentNumber(), request.fullName(), request.email(), sanitizePhone(request.phone())));
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
                 .buildAndExpand(customer.getId()).toUri();
         return ResponseEntity.created(location).body(CustomerResponse.from(customer));
@@ -63,7 +63,7 @@ public class CustomerController implements CustomerApi {
     @Transactional
     public CustomerResponse update(UUID customerId, UpdateCustomerRequest request) {
         Customer customer = commands.update(new UpdateCustomerCommand(customerId, request.fullName(),
-                request.email(), request.phone()));
+                request.email(), sanitizePhone(request.phone())));
 
         // Sincronizar con la tabla users si existe usuario para este cliente
         var existingUserOpt = userJpaRepository.findByCustomerId(customerId);
@@ -123,5 +123,12 @@ public class CustomerController implements CustomerApi {
     public ResponseEntity<Void> deactivate(UUID customerId) {
         commands.deactivate(customerId);
         return ResponseEntity.noContent().build();
+    }
+
+    private static String sanitizePhone(String phone) {
+        if (phone == null || phone.isBlank()) {
+            return null;
+        }
+        return phone.replaceAll("[\\s\\-\\(\\)]", "");
     }
 }

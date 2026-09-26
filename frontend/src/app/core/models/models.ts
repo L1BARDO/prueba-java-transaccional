@@ -45,6 +45,8 @@ export interface Account {
   status: AccountStatus;
   createdAt: string;
   updatedAt: string;
+  customerName?: string;
+  customerDocumentNumber?: string;
   version?: number;
 }
 
