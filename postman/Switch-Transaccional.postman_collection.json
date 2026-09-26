@@ -1,0 +1,1386 @@
+{
+  "info": {
+    "_postman_id": "8d9f104e-5e26-4a18-971c-4b67fa9c1234",
+    "name": "Switch Transaccional",
+    "description": "Colección completa para el switch transaccional: Clientes, Cuentas, Transacciones (depósitos, retiros, transferencias con idempotencia) y Casos de error (RFC 9457 ProblemDetail).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwtToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Autenticación",
+      "item": [
+        {
+          "name": "1. Login - Admin (Obtener Token JWT)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Token JWT generado y guardado\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.token).to.be.a('string');",
+                  "    pm.environment.set(\"jwtToken\", json.token);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"Admin123*\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "Autentica al administrador y guarda el token JWT en la variable de entorno jwtToken."
+          }
+        },
+        {
+          "name": "2. Login - Operador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Token JWT generado para operador\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.token).to.be.a('string');",
+                  "    pm.environment.set(\"jwtToken\", json.token);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"operador\",\n  \"password\": \"Operador123*\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "Autentica al operador del sistema."
+          }
+        },
+        {
+          "name": "3. Login - Cliente (Ana Perez)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Token JWT generado para cliente\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.token).to.be.a('string');",
+                  "    pm.environment.set(\"jwtToken\", json.token);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"ana.perez\",\n  \"password\": \"Cliente123*\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "Autentica al cliente con rol CUSTOMER."
+          }
+        },
+        {
+          "name": "4. Login - Usuario Bloqueado (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 403\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "pm.test(\"ProblemDetail contiene USER_LOCKED\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.code).to.eql('USER_LOCKED');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"bloqueado\",\n  \"password\": \"Bloqueado123*\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "Intento de login con usuario bloqueado. Debe responder 403 USER_LOCKED."
+          }
+        },
+        {
+          "name": "5. Consultar Usuario Actual (/auth/me)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Contiene datos del usuario y roles\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.username).to.be.a('string');",
+                  "    pm.expect(json.roles).to.be.an('array');",
+                  "    pm.expect(json.permissions).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "me"]
+            },
+            "description": "Devuelve la información del usuario autenticado a partir del token JWT."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Clientes",
+      "item": [
+        {
+          "name": "1. Registrar Cliente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"Response has customer ID and ACTIVE status\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.id).to.be.a('string');",
+                  "    pm.expect(json.status).to.eql('ACTIVE');",
+                  "    pm.environment.set(\"customerId\", json.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentType\": \"CC\",\n  \"documentNumber\": \"1098{{$randomInt}}\",\n  \"fullName\": \"Laura Valentina Castro\",\n  \"email\": \"laura.castro{{$randomInt}}@mail.com\",\n  \"phone\": \"+57315{{$randomInt}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers"]
+            },
+            "description": "Registra un nuevo cliente titular en estado ACTIVE."
+          }
+        },
+        {
+          "name": "2. Consultar Cliente por ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Cliente contiene campos esperados\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.id).to.eql(pm.environment.get(\"customerId\") || \"a0000000-0000-4000-8000-000000000001\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/{{customerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "{{customerId}}"]
+            },
+            "description": "Obtiene el detalle de un cliente por su UUID."
+          }
+        },
+        {
+          "name": "3. Listar Clientes (Filtro ACTIVE y Paginación)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Estructura paginada válida\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.content).to.be.an('array');",
+                  "    pm.expect(json.totalElements).to.be.at.least(1);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers?status=ACTIVE&page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "ACTIVE"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Lista clientes con filtro opcional de estado y paginación."
+          }
+        },
+        {
+          "name": "4. Actualizar Datos de Contacto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Laura Valentina Castro Actualizada\",\n  \"email\": \"laura.actualizada{{$randomInt}}@mail.com\",\n  \"phone\": \"+573209998877\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/{{customerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "{{customerId}}"]
+            },
+            "description": "Actualiza nombre, teléfono y correo electrónico de un cliente existente."
+          }
+        },
+        {
+          "name": "5. Inactivar Cliente (Baja Lógica)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/{{customerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "{{customerId}}"]
+            },
+            "description": "Inactiva un cliente (solo si no tiene cuentas abiertas)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cuentas",
+      "item": [
+        {
+          "name": "1. Abrir Cuenta 1 (Ahorros COP)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"Guarda accountId con saldo 0\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.id).to.be.a('string');",
+                  "    pm.expect(json.balance).to.eql(0);",
+                  "    pm.expect(json.status).to.eql('ACTIVE');",
+                  "    pm.environment.set(\"accountId\", json.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"accountType\": \"SAVINGS\",\n  \"currency\": \"COP\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/accounts",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "accounts"]
+            },
+            "description": "Apertura de una cuenta de ahorros en COP con saldo inicial cero."
+          }
+        },
+        {
+          "name": "2. Abrir Cuenta 2 (Corriente COP)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"Guarda accountId2\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.id).to.be.a('string');",
+                  "    pm.environment.set(\"accountId2\", json.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"accountType\": \"CHECKING\",\n  \"currency\": \"COP\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/accounts",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "accounts"]
+            },
+            "description": "Apertura de una segunda cuenta para pruebas de transferencias entre cuentas."
+          }
+        },
+        {
+          "name": "3. Consultar Cuenta por ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Contiene número de cuenta y saldo\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.accountNumber).to.be.a('string');",
+                  "    pm.expect(json.balance).to.be.a('number');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/accounts/{{accountId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "accounts", "{{accountId}}"]
+            },
+            "description": "Consulta el saldo y estado actual de una cuenta."
+          }
+        },
+        {
+          "name": "4. Listar Cuentas (Filtros customerId y status)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/accounts?customerId=a0000000-0000-4000-8000-000000000001&status=ACTIVE&page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "accounts"],
+              "query": [
+                {
+                  "key": "customerId",
+                  "value": "a0000000-0000-4000-8000-000000000001"
+                },
+                {
+                  "key": "status",
+                  "value": "ACTIVE"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Lista cuentas aplicando filtros por titular o estado."
+          }
+        },
+        {
+          "name": "5. Consultar Extracto de Movimientos (Ledger)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Lista de movimientos ordenada y paginada\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.content).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/accounts/b0000000-0000-4000-8000-000000000001/movements?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "accounts", "b0000000-0000-4000-8000-000000000001", "movements"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Libro mayor (ledger) inmutable con saldo posterior a cada operación."
+          }
+        },
+        {
+          "name": "6. Bloquear Cuenta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Estado es BLOCKED\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql('BLOCKED');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"BLOCKED\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/accounts/{{accountId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "accounts", "{{accountId}}", "status"]
+            },
+            "description": "Bloquea preventivamente una cuenta."
+          }
+        },
+        {
+          "name": "7. Reactivar Cuenta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Estado vuelve a ACTIVE\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql('ACTIVE');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACTIVE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/accounts/{{accountId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "accounts", "{{accountId}}", "status"]
+            },
+            "description": "Reactiva una cuenta bloqueada."
+          }
+        },
+        {
+          "name": "8. Cerrar Cuenta (Saldo Cero)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/accounts/{{accountId2}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "accounts", "{{accountId2}}"]
+            },
+            "description": "Cierra definitivamente una cuenta (exige saldo 0)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transacciones",
+      "item": [
+        {
+          "name": "1. Depósito (Consignación)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"Header Idempotent-Replayed es false\", function () {",
+                  "    pm.expect(pm.response.headers.get('Idempotent-Replayed')).to.eql('false');",
+                  "});",
+                  "pm.test(\"Transacción COMPLETED guardada\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql('COMPLETED');",
+                  "    pm.expect(json.type).to.eql('DEPOSIT');",
+                  "    pm.environment.set(\"transactionId\", json.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountId\": \"b0000000-0000-4000-8000-000000000001\",\n  \"amount\": 250000.00,\n  \"currency\": \"COP\",\n  \"description\": \"Depósito por taquilla\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions/deposits",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "transactions", "deposits"]
+            },
+            "description": "Acredita fondos a una cuenta bancaria con llave de idempotencia única."
+          }
+        },
+        {
+          "name": "2. Retiro en Efectivo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"Transacción WITHDRAWAL completada\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql('COMPLETED');",
+                  "    pm.expect(json.type).to.eql('WITHDRAWAL');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountId\": \"b0000000-0000-4000-8000-000000000001\",\n  \"amount\": 50000.00,\n  \"currency\": \"COP\",\n  \"description\": \"Retiro en cajero automático\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions/withdrawals",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "transactions", "withdrawals"]
+            },
+            "description": "Debita fondos de una cuenta bancaria activa con saldo suficiente."
+          }
+        },
+        {
+          "name": "3. Transferencia entre Cuentas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"Transacción TRANSFER completada\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql('COMPLETED');",
+                  "    pm.expect(json.type).to.eql('TRANSFER');",
+                  "    pm.expect(json.sourceAccountId).to.eql('b0000000-0000-4000-8000-000000000001');",
+                  "    pm.expect(json.destinationAccountId).to.eql('b0000000-0000-4000-8000-000000000003');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceAccountId\": \"b0000000-0000-4000-8000-000000000001\",\n  \"destinationAccountId\": \"b0000000-0000-4000-8000-000000000003\",\n  \"amount\": 100000.00,\n  \"currency\": \"COP\",\n  \"description\": \"Pago de servicios compartidos\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions/transfers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "transactions", "transfers"]
+            },
+            "description": "Transfiere saldo de forma atómica entre dos cuentas con bloqueo ordenado."
+          }
+        },
+        {
+          "name": "4. Reintento Idempotente (Replay -> 200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Reintento devuelve 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Header Idempotent-Replayed es true\", function () {",
+                  "    pm.expect(pm.response.headers.get('Idempotent-Replayed')).to.eql('true');",
+                  "});",
+                  "pm.test(\"Devuelve la transacción del seed-0001\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.reference).to.eql('TRX-SEED-0001');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "seed-0001"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountId\": \"b0000000-0000-4000-8000-000000000001\",\n  \"amount\": 1000000.00,\n  \"currency\": \"COP\",\n  \"description\": \"Consignación inicial\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions/deposits",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "transactions", "deposits"]
+            },
+            "description": "Reintento exacto con la llave 'seed-0001'. Devuelve la transacción original con 200 OK e Idempotent-Replayed: true."
+          }
+        },
+        {
+          "name": "5. Consultar Transacción por ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Datos de transacción válidos\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.reference).to.be.a('string');",
+                  "    pm.expect(json.status).to.be.oneOf(['COMPLETED', 'REJECTED']);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions/{{transactionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "transactions", "{{transactionId}}"]
+            },
+            "description": "Consulta el detalle y estado de una transacción."
+          }
+        },
+        {
+          "name": "6. Listar Transacciones con Filtros",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Paginación correcta\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.content).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions?accountId=b0000000-0000-4000-8000-000000000001&page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "transactions"],
+              "query": [
+                {
+                  "key": "accountId",
+                  "value": "b0000000-0000-4000-8000-000000000001"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Lista transacciones filtradas por cuenta, tipo, estado o rango de fechas."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Casos de error",
+      "item": [
+        {
+          "name": "400 - Validación de Formato (Monto Negativo)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400 Bad Request\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"ProblemDetail contiene code VALIDATION_ERROR y lista de errores\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql(400);",
+                  "    pm.expect(json.code).to.eql('VALIDATION_ERROR');",
+                  "    pm.expect(json.errors).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountId\": \"b0000000-0000-4000-8000-000000000001\",\n  \"amount\": -1000.00,\n  \"currency\": \"COP\",\n  \"description\": \"Prueba inválida\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions/deposits",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "transactions", "deposits"]
+            },
+            "description": "Verifica que montos negativos son rechazados con 400 y código VALIDATION_ERROR."
+          }
+        },
+        {
+          "name": "404 - Cuenta No Encontrada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404 Not Found\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test(\"ProblemDetail contiene code ACCOUNT_NOT_FOUND\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql(404);",
+                  "    pm.expect(json.code).to.eql('ACCOUNT_NOT_FOUND');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/accounts/b0000000-0000-4000-8000-999999999999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "accounts", "b0000000-0000-4000-8000-999999999999"]
+            },
+            "description": "Verifica que consultar un recurso inexistente devuelve 404 Not Found."
+          }
+        },
+        {
+          "name": "409 - Conflicto Llave de Idempotencia",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 409 Conflict\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "pm.test(\"ProblemDetail contiene code IDEMPOTENCY_KEY_CONFLICT\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql(409);",
+                  "    pm.expect(json.code).to.eql('IDEMPOTENCY_KEY_CONFLICT');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "seed-0001"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountId\": \"b0000000-0000-4000-8000-000000000001\",\n  \"amount\": 999999.00,\n  \"currency\": \"COP\",\n  \"description\": \"Intento de reutilizar llave con otro monto\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions/deposits",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "transactions", "deposits"]
+            },
+            "description": "Reutilizar una llave de idempotencia existente con una operación distinta devuelve 409 Conflict."
+          }
+        },
+        {
+          "name": "409 - Cliente Ya Existe (Documento Duplicado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 409 Conflict\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "pm.test(\"ProblemDetail contiene code CUSTOMER_ALREADY_EXISTS\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql(409);",
+                  "    pm.expect(json.code).to.eql('CUSTOMER_ALREADY_EXISTS');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentType\": \"CC\",\n  \"documentNumber\": \"1020304050\",\n  \"fullName\": \"Ana María Pérez Duplicada\",\n  \"email\": \"ana.otra@mail.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers"]
+            },
+            "description": "Verifica que registrar un cliente con documento repetido genera 409 Conflict."
+          }
+        },
+        {
+          "name": "422 - Fondos Insuficientes (Registra REJECTED)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 422 Unprocessable Entity\", function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "pm.test(\"ProblemDetail contiene code INSUFFICIENT_FUNDS\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql(422);",
+                  "    pm.expect(json.code).to.eql('INSUFFICIENT_FUNDS');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountId\": \"b0000000-0000-4000-8000-000000000003\",\n  \"amount\": 999999999.00,\n  \"currency\": \"COP\",\n  \"description\": \"Retiro que excede saldo\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions/withdrawals",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "transactions", "withdrawals"]
+            },
+            "description": "Intento de retiro que supera el saldo. La base de datos revierte y guarda la transacción en estado REJECTED."
+          }
+        },
+        {
+          "name": "422 - Cuenta Bloqueada (No Transacciona)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 422 Unprocessable Entity\", function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "pm.test(\"ProblemDetail contiene code ACCOUNT_NOT_ACTIVE\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql(422);",
+                  "    pm.expect(json.code).to.eql('ACCOUNT_NOT_ACTIVE');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountId\": \"b0000000-0000-4000-8000-000000000005\",\n  \"amount\": 50000.00,\n  \"currency\": \"COP\",\n  \"description\": \"Intento sobre cuenta bloqueada\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions/deposits",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "transactions", "deposits"]
+            },
+            "description": "Una cuenta en estado BLOCKED no admite depósitos ni retiros."
+          }
+        },
+        {
+          "name": "422 - Transferencia a la Misma Cuenta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 422 Unprocessable Entity\", function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "pm.test(\"ProblemDetail contiene code SAME_ACCOUNT_TRANSFER\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql(422);",
+                  "    pm.expect(json.code).to.eql('SAME_ACCOUNT_TRANSFER');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceAccountId\": \"b0000000-0000-4000-8000-000000000001\",\n  \"destinationAccountId\": \"b0000000-0000-4000-8000-000000000001\",\n  \"amount\": 10000.00,\n  \"currency\": \"COP\",\n  \"description\": \"Auto transferencia no permitida\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions/transfers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "transactions", "transfers"]
+            },
+            "description": "Regla de negocio: la cuenta origen y destino deben ser distintas."
+          }
+        },
+        {
+          "name": "422 - Moneda No Coincide con la Cuenta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 422 Unprocessable Entity\", function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "pm.test(\"ProblemDetail contiene code CURRENCY_MISMATCH\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql(422);",
+                  "    pm.expect(json.code).to.eql('CURRENCY_MISMATCH');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountId\": \"b0000000-0000-4000-8000-000000000001\",\n  \"amount\": 100.00,\n  \"currency\": \"USD\",\n  \"description\": \"Intento de depositar USD en cuenta COP\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions/deposits",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "transactions", "deposits"]
+            },
+            "description": "Regla de negocio: la divisa de la transacción debe ser la misma de la cuenta."
+          }
+        },
+        {
+          "name": "422 - Inactivar Cliente con Cuentas Abiertas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 422 Unprocessable Entity\", function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "pm.test(\"ProblemDetail contiene code CUSTOMER_HAS_OPEN_ACCOUNTS\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql(422);",
+                  "    pm.expect(json.code).to.eql('CUSTOMER_HAS_OPEN_ACCOUNTS');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/a0000000-0000-4000-8000-000000000001",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "a0000000-0000-4000-8000-000000000001"]
+            },
+            "description": "Un cliente no puede inactivarse si conserva cuentas activas o bloqueadas."
+          }
+        },
+        {
+          "name": "422 - Cerrar Cuenta con Saldo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 422 Unprocessable Entity\", function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "pm.test(\"ProblemDetail contiene code ACCOUNT_BALANCE_NOT_ZERO\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql(422);",
+                  "    pm.expect(json.code).to.eql('ACCOUNT_BALANCE_NOT_ZERO');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/accounts/b0000000-0000-4000-8000-000000000001",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "accounts", "b0000000-0000-4000-8000-000000000001"]
+            },
+            "description": "Una cuenta solo puede cerrarse si su balance es exactamente 0.00."
+          }
+        }
+      ]
+    }
+  ]
+}
