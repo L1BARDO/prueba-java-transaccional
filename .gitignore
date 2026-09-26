@@ -41,7 +41,10 @@ Thumbs.db
 *.tmp
 *~
 
-# Node.js / MCP Server
+# Node.js / MCP / Angular
 node_modules/
 package-lock.json
 .env
+.angular/
+dist/
+
