@@ -393,11 +393,40 @@ La base de datos se inicializa con los siguientes usuarios y cuentas:
 ### Usuarios del Sistema (Contraseñas con Hash Bcrypt)
 | Usuario | Contraseña | Rol | Descripción |
 |---|---|---|---|
-| `admin` | `Admin123*` | `ADMIN` | Acceso y privilegios totales |
+| `admin` | `Admin123*` | `ADMIN` | Acceso y privilegios totales en todo el switch |
 | `operador` | `Operador123*` | `OPERATOR` | Gestión operativa de clientes, cuentas y transacciones |
-| `auditor` | `Auditor123*` | `AUDITOR` | Consultas de lectura, reportes y conciliaciones |
-| `ana.perez` | `Cliente123*` | `CUSTOMER` | Vinculado a la clienta Ana María Pérez |
-| `bloqueado` | `Bloqueado123*` | `OPERATOR` | Usuario en estado `LOCKED` para pruebas |
+| `auditor` | `Auditor123*` | `AUDITOR` | Consultas de solo lectura, reportes y conciliaciones |
+| `ana.perez` | `Cliente123*` | `CUSTOMER` | Titular (asociada a la cliente Ana María Pérez) |
+| `bloqueado` | `Bloqueado123*` | `OPERATOR` | Usuario en estado `LOCKED` (5 intentos fallidos) |
+
+### Control de Acceso Basado en Roles (RBAC Parametrizado)
+
+El esquema de autorización está **completamente parametrizado en base de datos** mediante las tablas `roles`, `permissions` y `role_permissions`. Esto permite modificar asignaciones o crear nuevos perfiles sin alterar el código Java ni requerir re-despliegues.
+
+#### Alcance por Rol:
+- **`ADMIN`**: Privilegios totales. Administra seguridad (`USER_MANAGE`, `ROLE_MANAGE`), operaciones de negocio y auditoría.
+- **`OPERATOR`**: Cajero / Operador bancario. Gestiona clientes (creación, edición, baja), apertura/bloqueo/cierre de cuentas y procesa transacciones (depósitos, retiros y transferencias).
+- **`AUDITOR`**: Perfil de supervisión y cumplimiento normativo. Exclusivamente lectura (`*_READ`) y visualización de reportes (`REPORT_VIEW`). Cualquier operación de escritura responderá con `403 Forbidden`.
+- **`CUSTOMER`**: Canal de autoservicio bancario. Puede consultar sus cuentas, ver su extracto/movimientos contables y realizar transferencias hacia otras cuentas. No puede crear clientes ni cuentas de ventanilla.
+
+#### Matriz de Permisos por Rol:
+
+| Módulo / Acción | Permiso | `ADMIN` | `OPERATOR` | `AUDITOR` | `CUSTOMER` |
+|---|---|:---:|:---:|:---:|:---:|
+| **Consultar clientes** | `CUSTOMER_READ` |  |  |  | ❌ |
+| **Registrar clientes** | `CUSTOMER_CREATE` |  |  | ❌ | ❌ |
+| **Actualizar clientes** | `CUSTOMER_UPDATE` |  |  | ❌ | ❌ |
+| **Inactivar clientes** | `CUSTOMER_DELETE` |  |  | ❌ | ❌ |
+| **Consultar cuentas / movimientos** | `ACCOUNT_READ` |  |  |  |  |
+| **Abrir cuentas** | `ACCOUNT_CREATE` |  |  | ❌ | ❌ |
+| **Bloquear / reactivar cuentas** | `ACCOUNT_UPDATE_STATUS`|  |  | ❌ | ❌ |
+| **Cerrar cuentas** | `ACCOUNT_CLOSE` |  |  | ❌ | ❌ |
+| **Consultar transacciones** | `TRANSACTION_READ` |  |  |  |  |
+| **Realizar depósitos** | `TRANSACTION_DEPOSIT` |  |  | ❌ | ❌ |
+| **Realizar retiros** | `TRANSACTION_WITHDRAW` |  |  | ❌ | ❌ |
+| **Realizar transferencias** | `TRANSACTION_TRANSFER` |  |  | ❌ |  |
+| **Administrar usuarios** | `USER_MANAGE` |  | ❌ | ❌ | ❌ |
+| **Ver reportes / conciliación** | `REPORT_VIEW` |  | ❌ |  | ❌ |
 
 ### Cuentas Bancarias del Seed
 | Número de Cuenta | UUID de Cuenta | Titular | Tipo | Moneda | Saldo Inicial | Estado |
